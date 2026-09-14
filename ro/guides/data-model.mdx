@@ -1,0 +1,101 @@
+---
+title: "Modelul de date"
+description: "Cum sunt reprezentate sumele, datele, direcțiile și referințele."
+---
+
+## Sume
+
+Sumele sunt șiruri decimale, niciodată numere în virgulă mobilă și niciodată subunități:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parsează-le cu un tip decimal. Toate sumele unui obiect sunt în `currency`-ul acelui obiect, un cod ISO 4217.
+
+Sumele tranzacțiilor și previziunilor au **semn**: negativ înseamnă bani care ies din spațiul de lucru, pozitiv înseamnă bani care intră. Semnul este cel care contează. Câmpul `direction`, `"inflow"` sau `"outflow"`, este derivat din el, deci cele două nu pot fi niciodată în contradicție și poți grupa după direcție fără să parsezi. Suma câmpului `amount` pe orice set de tranzacții dă mișcarea netă.
+
+## Date
+
+Tranzacțiile și previziunile au un `date`, o dată calendaristică ISO 8601 precum `"2026-09-03"`. Nu există componentă de timp. Filtrele pe dată sunt inclusive la ambele capete.
+
+Câmpurile de audit `created_at` și `updated_at` sunt momente UTC în format RFC 3339.
+
+## Obiecte și referințe
+
+Fiecare obiect are un câmp `object` cu numele tipului și un `id`, un șir UUID. Obiectele legate vin ca identificatori:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Cere obiectele în sine cu `expand`, numind relațiile dorite, separate prin virgulă. Fiecare identificator este atunci înlocuit cu obiectul către care arată:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+Extinderea merge un singur nivel, iar un nume nesuportat este respins cu `400`. La o tranzacție poți extinde `account`, `category`, `counterparty` și `labels`. La un cont, `bank`. La o previziune, `category`, `counterparty`, `labels` și `linked_transactions`.
+
+Câmpul `bank` al unui cont este identificatorul conexiunii care îl alimentează, `null` pentru conturile ținute manual:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+În sens invers, de la o conexiune la conturile ei, se folosește un filtru, nu o extindere: `/accounts?bank_id=<id>`.
+
+Referințele nule sunt `null`, niciodată omise. Listele goale sunt `[]`.
+
+## Enumerări
+
+Toate enumerările sunt șiruri cu litere mici.
+
+| Câmp | Valori |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `category.activity` | `operating`, `investing`, `financing` |
+| `forecast.status` | `planned`, `overdue`, `partial`, `realised` |
+| `recurrence.interval` | `day`, `week`, `month`, `year` |
+
+Pot apărea valori noi într-o versiune minoră. Tratează valorile necunoscute ca opace, nu ca erori.
+
+## Ce conține o listă de tranzacții
+
+`/transactions` este un extras de cont: câte un rând pentru fiecare mișcare, și fiecare mișcare are un rând.
+
+Un transfer între două conturi proprii înseamnă două mișcări, deci vine ca două rânduri, câte unul pe fiecare cont. Nimic nu le marchează ca pereche. O tranzacție exclusă din cash flow în ThinkOut a mișcat totuși bani, deci rămâne un rând, iar nici asta nu este marcat.
+
+O listă nu este, prin urmare, un raport de cash flow. Dacă o însumezi, fiecare transfer este numărat de două ori, iar API-ul nu îți dă cum să îl recunoști. Cifrele care se potrivesc cu ce arată ThinkOut vin din endpointul de sinteză.
+
+## Sinteze
+
+`/transactions/summary` este singurul loc în care cifrele API-ului diferă deliberat de cele ale unei liste. Întoarce câte un rând pentru fiecare perioadă și un bloc `totals` pentru întregul interval, ca să nu aduni niciodată rânduri tu însuți:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+Cele patru câmpuri de sold apar doar pe rândurile grupate exclusiv pe perioadă. Grupează după o a doua dimensiune, de exemplu `group_by=counterparty`, și ele devin `null`, pentru că un sold per partener nu înseamnă nimic.
+
+Ce numără o sinteză este fix. Transferurile între conturile proprii, mișcările excluse de un utilizator și duplicatele sunt lăsate în afara fluxurilor; transferurile și cele excluse sunt raportate pe liniile lor separate. O plată împărțită este numărată o singură dată, prin bucățile ei. Sumele sunt convertite într-o singură monedă la cursul din data fiecărei mișcări; soldurile se convertesc întregi, la un singur curs, iar obiectul `conversion` spune care bază s-a aplicat.
+
+O listă nu poate fi filtrată până ajunge să coincidă cu o sinteză, și nici nu este menită să coincidă.

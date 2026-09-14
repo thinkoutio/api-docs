@@ -1,0 +1,57 @@
+---
+title: "Introduction"
+description: "Read the bank connections, accounts and transactions of a ThinkOut workspace from your own tools."
+---
+
+The ThinkOut API opens the data behind a workspace to your own tools. Use it to pull actuals into a BI tool or reconcile against an ERP.
+
+Version 1 covers reads: every endpoint is a `GET`, and every list that can grow pages the same way.
+
+## Resources
+
+<CardGroup cols={3}>
+  <Card title="Banks" icon="link" href="/api-reference/banks/list-bank-connections">
+    Bank connections, their status, and when each one last synced.
+  </Card>
+  <Card title="Accounts" icon="building-columns" href="/api-reference/accounts/list-accounts">
+    Manual and bank-connected accounts with their current balance in the account currency.
+  </Card>
+  <Card title="Transactions" icon="arrow-right-arrow-left" href="/api-reference/transactions/list-transactions">
+    Every booked and pending movement on every account, as the account recorded it.
+  </Card>
+  <Card title="Reports" icon="chart-column" href="/api-reference/reports/summarise-transactions">
+    Inflows, outflows and balances per period, computed the way the cash flow screen computes them.
+  </Card>
+  <Card title="MCP server" icon="message" href="/guides/mcp">
+    Ask about your workspace in plain language from Claude Code, Cursor, VS Code or Codex.
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```text
+https://api.thinkout.io/v1
+```
+
+All requests must use HTTPS. Responses are JSON with `snake_case` keys.
+
+## First request
+
+<Steps>
+  <Step title="Create an API key">
+    In ThinkOut open **Settings** and create a key for the workspace you want to read. The key is shown once. See [Authentication](/guides/authentication).
+  </Step>
+  <Step title="List your accounts">
+    ```bash
+    curl https://api.thinkout.io/v1/accounts \
+      -H "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+  </Step>
+  <Step title="Page through transactions">
+    ```bash
+    curl "https://api.thinkout.io/v1/transactions?from=2026-01-01&to=2026-03-31&limit=100" \
+      -H "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+    Follow `next_cursor` until `has_more` is `false`. See [Pagination](/guides/pagination).
+  </Step>
+</Steps>

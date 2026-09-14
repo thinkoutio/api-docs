@@ -1,0 +1,304 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "ThinkOut Developers",
+  "description": "API access to the bank connections, accounts and transactions in a ThinkOut workspace.",
+  "colors": {
+    "primary": "#27272a",
+    "light": "#e4e4e7",
+    "dark": "#27272a"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "href": "https://thinkout.io"
+  },
+  "favicon": {
+    "light": "/favicon/light.svg",
+    "dark": "/favicon/dark.svg"
+  },
+  "fonts": {
+    "family": "Lota Grotesque",
+    "weight": 400,
+    "source": "/fonts/LotaGrotesque-Regular.woff2",
+    "format": "woff2"
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "background": {
+    "color": {
+      "light": "#f4f4f5",
+      "dark": "#27272a"
+    }
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": "system"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "download-spec",
+      "claude"
+    ]
+  },
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": [
+        "curl",
+        "javascript",
+        "python"
+      ]
+    }
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "navbar": {
+          "links": [
+            {
+              "label": "Support",
+              "href": "https://support.thinkout.io"
+            }
+          ],
+          "primary": {
+            "type": "button",
+            "label": "Open ThinkOut",
+            "href": "https://app.thinkout.io"
+          }
+        },
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "guides/authentication",
+              "guides/pagination",
+              "guides/errors"
+            ]
+          },
+          {
+            "group": "Working with data",
+            "pages": [
+              "guides/data-model"
+            ]
+          },
+          {
+            "group": "MCP",
+            "pages": [
+              "guides/mcp"
+            ]
+          },
+          {
+            "group": "API reference",
+            "pages": [
+              "api-reference/overview",
+              {
+                "group": "Banks",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /banks",
+                  "GET /banks/{id}"
+                ]
+              },
+              {
+                "group": "Accounts",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /accounts",
+                  "GET /accounts/{id}"
+                ]
+              },
+              {
+                "group": "Transactions",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /transactions",
+                  "GET /transactions/{id}"
+                ]
+              },
+              {
+                "group": "Categories",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /categories",
+                  "GET /categories/{id}"
+                ]
+              },
+              {
+                "group": "Counterparties",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /counterparties",
+                  "GET /counterparties/{id}"
+                ]
+              },
+              {
+                "group": "Labels",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /labels",
+                  "GET /labels/{id}"
+                ]
+              },
+              {
+                "group": "Reports",
+                "openapi": "openapi/v1.yaml",
+                "expanded": false,
+                "pages": [
+                  "GET /transactions/summary",
+                  "GET /balances"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ro",
+        "navbar": {
+          "links": [
+            {
+              "label": "Suport",
+              "href": "https://support.thinkout.io/en/collections/967483-despre-thinkout"
+            }
+          ],
+          "primary": {
+            "type": "button",
+            "label": "Deschide ThinkOut",
+            "href": "https://app.thinkout.io"
+          }
+        },
+        "groups": [
+          {
+            "group": "Primii pași",
+            "pages": [
+              "ro/index",
+              "ro/guides/authentication",
+              "ro/guides/pagination",
+              "ro/guides/errors"
+            ]
+          },
+          {
+            "group": "Lucrul cu datele",
+            "pages": [
+              "ro/guides/data-model"
+            ]
+          },
+          {
+            "group": "MCP",
+            "pages": [
+              "ro/guides/mcp"
+            ]
+          },
+          {
+            "group": "Referință API",
+            "pages": [
+              "ro/api-reference/overview",
+              {
+                "group": "Bănci",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /banks",
+                  "GET /banks/{id}"
+                ]
+              },
+              {
+                "group": "Conturi",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /accounts",
+                  "GET /accounts/{id}"
+                ]
+              },
+              {
+                "group": "Tranzacții",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /transactions",
+                  "GET /transactions/{id}"
+                ]
+              },
+              {
+                "group": "Categorii",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /categories",
+                  "GET /categories/{id}"
+                ]
+              },
+              {
+                "group": "Parteneri",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /counterparties",
+                  "GET /counterparties/{id}"
+                ]
+              },
+              {
+                "group": "Etichete",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /labels",
+                  "GET /labels/{id}"
+                ]
+              },
+              {
+                "group": "Rapoarte",
+                "openapi": {
+                  "source": "openapi/v1.ro.yaml",
+                  "directory": "ro/api-reference"
+                },
+                "expanded": false,
+                "pages": [
+                  "GET /transactions/summary",
+                  "GET /balances"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "website": "https://thinkout.io"
+    }
+  }
+}

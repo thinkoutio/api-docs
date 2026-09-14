@@ -1,0 +1,55 @@
+---
+title: "Pagination"
+description: "Every list endpoint uses the same cursor-based contract."
+---
+
+All list endpoints return the same envelope:
+
+```json
+{
+  "object": "list",
+  "data": [ ... ],
+  "has_more": true,
+  "next_cursor": "eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0"
+}
+```
+
+Request the next page by passing `next_cursor` back as `cursor`. When `has_more` is `false`, `next_cursor` is `null` and you have everything.
+
+<Note>
+  `/accounts` is the one list that does not page. It returns every account in one response and accepts neither `limit` nor `cursor`, but keeps the envelope above with `has_more` set to `false`, so code written for the paged endpoints works on it unchanged.
+</Note>
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?limit=100&cursor=eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Parameters
+
+| Parameter | Default | Max | Notes |
+|---|---|---|---|
+| `limit` | `100` | `500` | Page size. |
+| `cursor` | | | Opaque token from the previous page. Do not construct or decode it. |
+
+Keep the filters identical between pages. A cursor is only valid for the query that produced it, and reusing it with different filters returns `400 invalid_cursor`.
+
+## Ordering
+
+Each resource has one fixed order. There is no `sort` parameter.
+
+| Resource | Order |
+|---|---|
+| transactions, forecasts | `date` descending, then `id` |
+| categories | the order ThinkOut displays them |
+| accounts, banks, counterparties, labels | `name` ascending, then `id` |
+
+Categories are the exception. They come back as the product's own category screen reads: inflows before outflows, each root immediately followed by its children, siblings in `position` order. Keep the rows in the order you received them and the tree renders correctly without sorting.
+
+## Why cursors
+
+Bank syncs insert transactions while you page. Offset pagination would skip or repeat rows in that case. The cursor is anchored to the last row you received, so a page never overlaps the previous one.
+
+## Counts
+
+There is no `total_count` in the envelope. To count rows, page to the end. For aggregates, use the reporting features of ThinkOut itself.

@@ -1,0 +1,140 @@
+---
+title: "Server MCP"
+description: "Pune întrebări despre spațiul tău de lucru din Claude Code, Cursor, VS Code sau Codex, în limbaj obișnuit."
+---
+
+Conectează-ți asistentul AI la ThinkOut și întreabă-l despre banii tăi așa cum ai întreba un coleg: cât ți-a plătit un client anul acesta, ce sold ai, cum s-au mișcat banii lună de lună la o bancă. Răspunde din spațiul tău de lucru, cu cheia ta API, și poate doar să citească. Nimic din ce faci tu sau el prin această conexiune nu îți modifică datele.
+
+Întreabă în limba în care gândești. Româna merge la fel de bine ca engleza, cu sau fără diacritice.
+
+## Conectare
+
+Ai nevoie de o cheie API pentru spațiul de lucru, creată din **Setări** în ThinkOut. Apoi adaugă ThinkOut în asistentul tău:
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http thinkout https://mcp.thinkout.io \
+      --header "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Cursor și VS Code">
+    Adaugă în `mcp.json`:
+    ```json
+    {
+      "mcpServers": {
+        "thinkout": {
+          "url": "https://mcp.thinkout.io",
+          "headers": { "Authorization": "Bearer <cheia ta API>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    Adaugă în `~/.codex/config.toml`:
+    ```toml
+    [mcp_servers.thinkout]
+    url = "https://mcp.thinkout.io"
+    bearer_token_env_var = "THINKOUT_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Alți clienți">
+    Orice client care suportă MCP prin Streamable HTTP se poate conecta. Folosește `https://mcp.thinkout.io` ca adresă a serverului și trimite cheia API în antetul `Authorization: Bearer`.
+  </Tab>
+</Tabs>
+
+<Note>
+  Claude Desktop și claude.ai se conectează prin OAuth, nu printr-o cheie API, așa că deocamdată nu poți adăuga ThinkOut acolo. Suportul pentru ele urmează.
+</Note>
+
+## Ce poți întreba
+
+- „Ce sold am acum?” și „Ce sold aveam pe 30 iunie?”
+- „Cât ne-a plătit Orange în prima jumătate a anului?”
+- „Încasări și plăți pe ultimele șase luni, în total și pe fiecare lună.”
+- „Cash flow-ul pe luni pentru ultimul semestru, doar pentru conturile de la BT.”
+- „Arată-mi tranzacțiile de luna trecută de la ING.”
+- „Primii cinci furnizori din trimestrul acesta.”
+- „Septembrie anul acesta față de septembrie anul trecut.”
+- „De ce a scăzut soldul în iunie?”
+- „Când ne-a plătit ultima dată Moșteanu și cât de des plătește?”
+- „Cât mai am necategorisit?”
+- „Conexiunea cu ING mai sincronizează? Când expiră consimțământul?”
+- „Ce reguli de categorisire am și ce fac ele?”
+- „Ce transferuri am făcut între conturile mele luna aceasta?”
+
+Scrie datele așa cum le-ai spune, inclusiv „de la 1 aprilie până azi”. Dacă lași anul deoparte, asistentul îl presupune pe cel curent și îți spune că a făcut-o.
+
+## Cum arată un răspuns
+
+Fiecare răspuns spune perioada acoperită și moneda înaintea cifrelor, ca să poți verifica ce a înțeles înainte să te bazezi pe numere. Două exemple.
+
+**„Încasări și plăți pe ultimele șase luni, în total și pe lună.”**
+
+> Pentru 1 martie – 31 august 2026, în RON:
+>
+> | Luna | Încasări | Plăți | Net |
+> |---|---|---|---|
+> | Martie | 84.200,00 | −61.350,25 | 22.849,75 |
+> | Aprilie | 79.700,00 | −57.070,50 | 22.629,50 |
+> | Mai | 91.150,00 | −66.980,00 | 24.170,00 |
+> | Iunie | 62.300,00 | −71.420,10 | −9.120,10 |
+> | Iulie | 88.050,00 | −60.115,00 | 27.935,00 |
+> | August | 85.600,00 | −63.200,40 | 22.399,60 |
+> | **Total** | **491.000,00** | **−380.136,25** | **110.863,75** |
+>
+> Iunie este singura lună cu ieșire netă. Transferurile între conturile tale și mișcările excluse nu sunt incluse.
+
+**„Primii cinci furnizori din trimestrul acesta.”**
+
+> Pentru 1 iulie – 11 septembrie 2026, plăți pe parteneri, în RON:
+>
+> | Partener | Plăți | Pondere |
+> |---|---|---|
+> | Salarii | −96.400,00 | 41% |
+> | Orange Romania | −18.230,50 | 8% |
+> | ANAF | −17.905,00 | 8% |
+> | Regus | −12.000,00 | 5% |
+> | Emag | −9.870,25 | 4% |
+>
+> Împreună, 66% din 234.120,75 plăți. Restul vine de la alți 31 de parteneri.
+
+## Filtrare și grupare
+
+Poți restrânge o întrebare după câte lucruri vrei deodată, exact ca pe ecranul de cash flow. „Cheltuielile de marketing pe Proiectul X din conturile de la BT” înseamnă o categorie, o etichetă și o bancă aplicate împreună.
+
+Gruparea este mai strictă. Cifrele vin pe zi, pe săptămână sau pe lună, și opțional după încă un lucru: partener, categorie, etichetă, cont sau bancă. „Pe lună, pe categorii” este o singură întrebare. „Pe categorii și pe parteneri” sunt două, iar asistentul te va întreba pe care o vrei mai întâi.
+
+Când ceri cifre pe perioadă fără altă grupare, fiecare rând arată și soldul de început, transferurile, mișcările excluse și soldul de final al perioadei, exact ca ecranul de cash flow. Grupat după orice altceva, primești doar fluxurile; un sold per furnizor nu ar însemna nimic.
+
+## De unde vin cifrele
+
+Asistentul nu adună tranzacții de unul singur. Fiecare total este calculat de ThinkOut după aceleași reguli ca ecranul de cash flow: transferurile între conturile tale, mișcările pe care le-ai exclus și duplicatele sunt lăsate deoparte; o plată împărțită este numărată o singură dată, prin bucățile ei; totul este convertit într-o singură monedă la cursul din ziua fiecărei mișcări. Cifra pe care o primești în conversație este cifra pe care ai vedea-o în aplicație.
+
+## Ce poate face asistentul
+
+În spatele conversației, asistentul are câteva lucruri pe care le poate cere de la ThinkOut. Nu le folosești niciodată direct, dar cunoscându-le știi ce se poate și ce nu.
+
+| Poate | Ceea ce înseamnă că poți întreba |
+|---|---|
+| Să citească băncile, conturile, arborele de categorii și tipurile de etichete, plus partenerii și etichetele când sunt puțini | Întrebări pe nume: „conturile de la BT”, „marketing”, „necategorisite” |
+| Să caute parteneri, etichete și orice altceva pe nume, mai multe deodată | „Orange”, „Proiectul X”, „Moșteanu”, cu greșeli de tipar și fără diacritice |
+| Să afle soldul fiecărui cont într-o zi | Soldul acum, la o dată, pe bancă, într-o singură monedă |
+| Să sintetizeze mișcările pe perioadă și după o grupare | Totaluri, serii, topuri, comparații, cash flow pe luni |
+| Să listeze mișcările dintr-un interval | Tranzacțiile din spatele oricărei cifre, câte cincizeci odată |
+| Să listeze categoriile, etichetele și partenerii, cu cât de des sunt folosite | „Ce categorii am?”, „Care sunt clienții mei?” |
+| Să listeze regulile de categorisire | „Cum ajung tranzacțiile în categoria asta?” |
+| Să listeze transferurile între conturile tale | „Ce am mutat între conturi luna trecută?” |
+
+Nu poate vedea încă previziuni, bugete sau scenarii și nu poate modifica nimic.
+
+## Bine de știut
+
+Fiecare întrebare pe care asistentul o pune ThinkOut se contorizează în limita cheii tale API, 120 de cereri pe minut. O întrebare obișnuită înseamnă una sau două cereri, așa că nu vei simți limita decât dacă rulezi mai mulți asistenți deodată.
+
+Listele vin câte cincizeci de tranzacții. Dacă ceri un interval mare, asistentul îți arată prima pagină și îți propune să restrângi sau să continui.
+
+Asistentul caută numele de clienți și de etichete pe măsură ce are nevoie de ele, mai multe într-o singură căutare, așa că o întrebare despre trei clienți costă o singură căutare, oricâți parteneri ar avea spațiul tău de lucru. Dacă un nume se potrivește și cu un client, și cu o etichetă, te va întreba la care te referi.
+
+Și aceste pagini pot fi citite de asistentul tău. Îndreaptă-l spre acest site și poate afla cum funcționează API-ul în timp ce te ajută să construiești pe el; pentru asta nu are nevoie de cheie API.

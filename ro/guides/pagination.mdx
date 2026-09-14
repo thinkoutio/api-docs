@@ -1,0 +1,55 @@
+---
+title: "Paginare"
+description: "Toate endpoint-urile de listare folosesc același contract bazat pe cursor."
+---
+
+Toate endpoint-urile de listare întorc același înveliș:
+
+```json
+{
+  "object": "list",
+  "data": [ ... ],
+  "has_more": true,
+  "next_cursor": "eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0"
+}
+```
+
+Cere pagina următoare trimițând `next_cursor` înapoi ca `cursor`. Când `has_more` este `false`, `next_cursor` este `null` și ai primit tot.
+
+<Note>
+  `/accounts` este singura listă care nu se paginează. Întoarce toate conturile într-un singur răspuns și nu acceptă nici `limit`, nici `cursor`, dar păstrează învelișul de mai sus, cu `has_more` pe `false`, așa că codul scris pentru endpoint-urile paginate funcționează neschimbat.
+</Note>
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?limit=100&cursor=eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Parametri
+
+| Parametru | Implicit | Maxim | Observații |
+|---|---|---|---|
+| `limit` | `100` | `500` | Dimensiunea paginii. |
+| `cursor` | | | Token opac din pagina anterioară. Nu îl construi și nu îl decoda. |
+
+Păstrează aceleași filtre între pagini. Un cursor este valid doar pentru interogarea care l-a produs; refolosit cu alte filtre, întoarce `400 invalid_cursor`.
+
+## Ordonare
+
+Fiecare resursă are o singură ordine fixă. Nu există parametru `sort`.
+
+| Resursă | Ordine |
+|---|---|
+| tranzacții, previziuni | `date` descrescător, apoi `id` |
+| categorii | ordinea în care le afișează ThinkOut |
+| conturi, bănci, parteneri, etichete | `name` crescător, apoi `id` |
+
+Categoriile sunt excepția. Vin așa cum se citește ecranul de categorii din produs: încasările înaintea plăților, fiecare categorie de nivel superior urmată imediat de copiii ei, iar categoriile de pe același nivel în ordinea `position`. Păstrează rândurile în ordinea în care le-ai primit și arborele se afișează corect fără nicio sortare.
+
+## De ce cursor
+
+Sincronizările bancare inserează tranzacții în timp ce parcurgi paginile. Paginarea cu offset ar sări sau ar repeta rânduri în acest caz. Cursorul este ancorat la ultimul rând primit, așa că o pagină nu se suprapune niciodată cu cea anterioară.
+
+## Numărare
+
+Învelișul nu conține `total_count`. Pentru a număra rândurile, parcurge paginile până la capăt. Pentru agregări, folosește rapoartele din ThinkOut.

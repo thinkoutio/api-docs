@@ -1,0 +1,154 @@
+/* Lota Grotesque is the ThinkOut brand typeface. The files are the same woff2
+   builds the web app serves from client/public/fonts. */
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-RegularIt.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The app uses semibold rather than bold for emphasis. */
+strong {
+  font-weight: 600;
+}
+
+/* Borders as in the app: flat 1px solid, 8px radius, no shadows.
+   border.default = zinc 800 (light) / zinc 600 (dark) for boxes.
+   border.light   = zinc 200 (light) / zinc 700 (dark) for structural dividers.
+   Mintlify toggles the .dark class on <html>. */
+:root {
+  --to-radius: 8px;
+  --to-border: #27272a;
+  --to-border-light: #e4e4e7;
+  --to-surface: #f4f4f5;
+  --to-page: #f4f4f5;
+}
+
+.dark {
+  --to-border: #52525b;
+  --to-border-light: #3f3f46;
+  --to-surface: #27272a;
+  --to-page: #27272a;
+}
+
+/* Code blocks sit flat on the page: no white or black panel inside the border.
+   Shiki sets --shiki-dark-bg inline; the copy-button backdrop reads it. */
+html.dark .code-block-background,
+html.dark .code-block,
+html.dark .code-group {
+  --shiki-dark-bg: #27272a !important;
+  --codeblock-dark: #27272a !important;
+}
+
+html.dark .code-block-fade-overlay,
+html.dark [data-fade-overlay] {
+  --fade-color-dark: #27272a !important;
+}
+.code-group,
+.code-block,
+html .code-block-background,
+html.dark .code-block-background,
+html.dark [class*="bg-codeblock"],
+.code-group pre,
+.code-block pre,
+pre.shiki,
+.codeblock-light,
+.codeblock-dark,
+[class*="codeblock"],
+[class*="bg-codeblock"] {
+  background-color: var(--to-page) !important;
+}
+
+/* Boxes: cards, code blocks, callouts, playground panels, tabs, accordions, inputs. */
+.border-standard,
+.code-group,
+.code-block,
+.callout,
+.accordion,
+.card,
+[class*="rounded-2xl"][class*="border"],
+[class*="rounded-xl"][class*="border"] {
+  border: 1px solid var(--to-border) !important;
+  border-radius: var(--to-radius) !important;
+  box-shadow: none !important;
+}
+
+.border-standard,
+.card {
+  background-color: var(--to-surface) !important;
+}
+
+.border-standard:hover,
+.card:hover {
+  border-color: var(--to-border) !important;
+}
+
+.rounded-2xl,
+.rounded-xl,
+.rounded-lg,
+.rounded-\[10px\] {
+  border-radius: var(--to-radius) !important;
+}
+
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl {
+  box-shadow: none !important;
+}
+
+/* Search field and buttons follow the app's outlined controls. */
+#search-bar-entry,
+.theme-preference-menu-trigger {
+  border: 1px solid var(--to-border) !important;
+  border-radius: var(--to-radius) !important;
+  box-shadow: none !important;
+}
+
+/* Structural dividers stay light, like the app's divider between rows. */
+#sidebar,
+#navbar > div,
+.toc-item,
+th,
+td {
+  border-color: var(--to-border-light) !important;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--to-border-light);
+}

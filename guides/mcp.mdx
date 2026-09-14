@@ -1,0 +1,140 @@
+---
+title: "MCP server"
+description: "Ask questions about your workspace from Claude Code, Cursor, VS Code or Codex, in plain language."
+---
+
+Connect your AI assistant to ThinkOut and ask it about your money the way you would ask a colleague: how much a client paid you this year, what your balance is, how cash moved month by month at one bank. It answers from your workspace, using your API key, and it can only read. Nothing you or it does through this connection changes your data.
+
+Ask in the language you think in. Romanian works as well as English.
+
+## Connect
+
+You need an API key for the workspace, created under **Settings** in ThinkOut. Then add ThinkOut to your assistant:
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http thinkout https://mcp.thinkout.io \
+      --header "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Cursor and VS Code">
+    Add to `mcp.json`:
+    ```json
+    {
+      "mcpServers": {
+        "thinkout": {
+          "url": "https://mcp.thinkout.io",
+          "headers": { "Authorization": "Bearer <your API key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    Add to `~/.codex/config.toml`:
+    ```toml
+    [mcp_servers.thinkout]
+    url = "https://mcp.thinkout.io"
+    bearer_token_env_var = "THINKOUT_API_KEY"
+    ```
+  </Tab>
+  <Tab title="Other clients">
+    Any client that supports MCP over Streamable HTTP can connect. Use `https://mcp.thinkout.io` as the server address and send your API key as `Authorization: Bearer`.
+  </Tab>
+</Tabs>
+
+<Note>
+  Claude Desktop and claude.ai connect through OAuth rather than an API key, so you cannot add ThinkOut there yet. Support for them is coming.
+</Note>
+
+## What you can ask
+
+- "What is my balance right now?" and "What was it on 30 June?"
+- "How much did Orange pay us in the first half of the year?"
+- "Inflows and outflows for the last six months, in total and per month."
+- "Cash flow by month for the last semester, only for the BT accounts."
+- "Show me last month's transactions from ING."
+- "Top five suppliers this quarter."
+- "This September against last September."
+- "Why did the balance drop in June?"
+- "When did Moșteanu last pay us, and how often do they pay?"
+- "How much is still uncategorised?"
+- "Is the ING connection still syncing? When does its consent expire?"
+- "What categorisation rules do I have, and what do they do?"
+- "Which transfers did I make between my accounts this month?"
+
+Write dates the way you would say them, "from the first of April until today" included. If you leave the year out, your assistant assumes the current one and tells you so.
+
+## What an answer looks like
+
+Every answer states the period it covers and the currency before the figures, so you can check what was understood before you rely on the numbers. Two examples.
+
+**"Inflows and outflows for the last six months, total and per month."**
+
+> For 1 March to 31 August 2026, in RON:
+>
+> | Month | Inflows | Outflows | Net |
+> |---|---|---|---|
+> | March | 84,200.00 | −61,350.25 | 22,849.75 |
+> | April | 79,700.00 | −57,070.50 | 22,629.50 |
+> | May | 91,150.00 | −66,980.00 | 24,170.00 |
+> | June | 62,300.00 | −71,420.10 | −9,120.10 |
+> | July | 88,050.00 | −60,115.00 | 27,935.00 |
+> | August | 85,600.00 | −63,200.40 | 22,399.60 |
+> | **Total** | **491,000.00** | **−380,136.25** | **110,863.75** |
+>
+> June is the only month with a net outflow. Transfers between your own accounts and excluded movements are not included.
+
+**"Top five suppliers this quarter."**
+
+> For 1 July to 11 September 2026, outflows by counterparty in RON:
+>
+> | Counterparty | Outflows | Share |
+> |---|---|---|
+> | Salarii | −96,400.00 | 41% |
+> | Orange Romania | −18,230.50 | 8% |
+> | ANAF | −17,905.00 | 8% |
+> | Regus | −12,000.00 | 5% |
+> | Emag | −9,870.25 | 4% |
+>
+> Together 66% of 234,120.75 in outflows. 31 other counterparties make up the rest.
+
+## Filtering and grouping
+
+You can narrow a question by as many things as you like at once, just as on the cash flow screen. "Marketing spend on Project X from the BT accounts" is a category, a label and a bank applied together.
+
+Grouping is narrower. Figures come per day, week or month, and optionally by one more thing: counterparty, category, label, account or bank. "Per month by category" is one question. "By category and by counterparty" is two, and your assistant will ask which you want first.
+
+When you ask per period without another grouping, each row also shows the starting balance, transfers, excluded movements and final balance for that period, exactly as the cash flow screen does. Grouped by anything else, you get the flows only; a balance per supplier would not mean anything.
+
+## Where the numbers come from
+
+Your assistant does not add up transactions itself. Every total is computed by ThinkOut with the same rules as the cash flow screen: transfers between your own accounts, movements you excluded and duplicates are left out; a split payment is counted once through its pieces; everything is converted to one currency at the rate of each movement's own date. The figure you get in the chat is the figure you would see in the app.
+
+## What your assistant can do
+
+Behind the conversation, your assistant has a handful of things it can ask ThinkOut for. You never use them directly, but knowing them tells you what is and is not possible.
+
+| It can | Which means you can ask |
+|---|---|
+| Read your workspace's banks, accounts, category tree and label types, plus the counterparties and labels themselves when there are few | Questions by name: "the BT accounts", "marketing", "uncategorised" |
+| Look up counterparties, labels and anything else by name, several at once | "Orange", "Project X", "Moșteanu", with typos and without diacritics |
+| Get every account's balance on a day | Balance now, on a date, per bank, in one currency |
+| Summarise movements per period and by one grouping | Totals, series, top lists, comparisons, cash flow by month |
+| List movements over a window | The transactions behind any figure, up to fifty at a time |
+| List categories, labels and counterparties with how often each is used | "What categories do I have?", "Who are my clients?" |
+| List the categorisation rules | "How do transactions end up in this category?" |
+| List transfers between your own accounts | "What did I move between accounts last month?" |
+
+It cannot see forecasts, budgets or scenarios yet, and it cannot change anything.
+
+## Good to know
+
+Every question your assistant asks ThinkOut counts against your API key's limit of 120 requests a minute. A typical question is one or two requests, so you will not notice it unless you run several assistants at once.
+
+Lists come fifty transactions at a time. If you ask for a large window, your assistant will show the first page and offer to narrow or continue.
+
+Your assistant looks up client and label names as it needs them, several in one go, so a question about three clients costs one lookup however many counterparties your workspace has. If a name matches both a client and a label, it will ask which you meant.
+
+These docs are also readable by your assistant. Point it at this site and it can look up how the API works while helping you build on it; that needs no API key.
