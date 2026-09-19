@@ -1,0 +1,26 @@
+---
+title: "API overview"
+description: "Conventions shared by every endpoint."
+---
+
+| | |
+|---|---|
+| Base URL | `https://api.thinkout.io/v1` |
+| Authentication | `Authorization: Bearer <api key>`, one key per workspace |
+| Format | JSON, `snake_case` keys, UTF-8 |
+| Ids | UUID strings |
+| Money | Signed decimal strings plus an ISO 4217 `currency` |
+| Dates | `YYYY-MM-DD`; timestamps in RFC 3339 UTC |
+| Lists | `{ object, data, has_more, next_cursor }`, `limit` up to 500 |
+| Errors | `{ error: { type, code, message, param, request_id } }` |
+| Reports | `/transactions/summary` and `/balances` return totals computed with the cash flow screen's rules |
+
+## Versioning
+
+The version is in the path. Within `v1` we only make additive changes: new fields, new enumeration values, new optional filters, new endpoints. Removing or renaming a field, changing a type, or changing the meaning of an existing filter would ship as `v2` with `v1` kept running for at least twelve months.
+
+Ignore fields you do not recognise and treat unknown enumeration values as opaque.
+
+## Playground
+
+Every endpoint page has a playground. Paste an API key in the authorization field to run requests against your own workspace. Keys are kept in your browser only.

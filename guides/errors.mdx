@@ -1,0 +1,64 @@
+---
+title: "Errors"
+description: "One envelope, stable codes, and a request id for support."
+---
+
+Errors use HTTP status codes and a JSON body with a single `error` object:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "invalid_parameter",
+    "message": "Parameter 'from' must be a date in YYYY-MM-DD format.",
+    "param": "from",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `type` | Broad class: `invalid_request`, `authentication`, `not_found`, `rate_limit`, `server`. |
+| `code` | Stable machine-readable reason. Branch on this, not on `message`. |
+| `message` | Human-readable explanation. Wording can change. |
+| `param` | The query or path parameter at fault, when there is one. |
+| `request_id` | Quote this when contacting support. |
+
+## Codes
+
+| Status | `type` | `code` |
+|---|---|---|
+| `400` | `invalid_request` | `invalid_parameter`, `invalid_cursor`, `limit_out_of_range`, `invalid_expand`, `as_of_in_future` |
+| `401` | `authentication` | `unauthorized` |
+| `403` | `authentication` | `forbidden` |
+| `404` | `not_found` | `resource_not_found` |
+| `422` | `invalid_request` | `too_many_groups`, `period_too_long` |
+| `429` | `rate_limit` | `rate_limited` |
+| `500` | `server` | `internal_error` |
+
+## Reports that ask for too much
+
+A report request can be valid and still exceed what one call may compute. Grouping by counterparty over several years produces `too_many_groups`; asking for a period longer than a report allows produces `period_too_long`. Both messages name what the request would have produced and the ceiling, so you can narrow it without guessing:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "too_many_groups",
+    "message": "Grouping by counterparty over this period produces 4,182 groups. The maximum is 1,000. Narrow the period or the filters.",
+    "param": "group_by",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+Reports are never partial. A request either returns a complete answer or fails.
+
+## Rate limits
+
+Requests are limited per API key. A `429` response carries a `Retry-After` header with the number of seconds to wait. Back off and retry after that interval. Paging with `limit=500` is the cheapest way to pull large ranges.
+
+## Unknown ids
+
+Fetching an id that does not exist in the key's workspace returns `404`, including ids that exist in another workspace. The API never confirms the existence of data you cannot read.

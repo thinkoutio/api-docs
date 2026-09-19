@@ -1,0 +1,2438 @@
+# GENERATED FILE. Do not edit. Built from v1.yaml by scripts/docs/build-ro-openapi.mjs
+# using scripts/docs/ro.translations.json.
+openapi: 3.1.0
+info:
+  title: ThinkOut API
+  version: '1.0'
+  description: |-
+    Acces programatic la datele unui spațiu de lucru ThinkOut.
+
+    În versiunea 1 fiecare endpoint este un `GET`. Listele folosesc același înveliș de răspuns și se paginează cu un cursor oriunde lista poate crește.
+
+    Versiunea 1 se schimbă doar prin adăugare. Pot apărea oricând endpointuri noi, parametri opționali noi, câmpuri noi în răspuns și valori noi de enumerare, așa că tolerați câmpurile necunoscute și nu tratați niciodată o enumerare ca pe o mulțime închisă.
+  contact:
+    name: Suport ThinkOut
+    url: https://developers.thinkout.io/guides/support
+servers:
+  - url: https://api.thinkout.io/v1
+security:
+  - apiKey: []
+tags:
+  - name: Bănci
+    description: Conexiunile bancare ale spațiului de lucru și starea fiecăreia.
+  - name: Conturi
+    description: Conturi manuale, sincronizate cu banca și delegate, cu solduri calculate.
+  - name: Tranzacții
+    description: Mișcări înregistrate și în așteptare pe conturile spațiului de lucru.
+  - name: Categorii
+    description: Arborele de categorii al spațiului de lucru, pe direcție și activitate.
+  - name: Parteneri
+    description: Clienții și furnizorii cărora le sunt atribuite tranzacțiile și previziunile.
+  - name: Etichete
+    description: Etichete libere, grupate pe tipuri.
+  - name: Previziuni
+    description: Încasări și plăți planificate și tranzacțiile care le-au realizat.
+  - name: Rapoarte
+    description: Totaluri, nu rânduri. Sinteze peste tranzacții și previziuni, plus rapoartele de cash flow salvate în spațiul de lucru.
+paths:
+  /banks:
+    get:
+      tags:
+        - Bănci
+      operationId: listBanks
+      summary: Listează conexiunile bancare
+      description: |-
+        Întoarce conexiunile bancare ale spațiului de lucru, ordonate după `name`, apoi după `id`.
+
+        O conexiune este o autorizare cu o singură bancă și poate alimenta mai multe conturi. Conexiunile delegate din alt spațiu de lucru sunt incluse atunci când alimentează un cont vizibil aici, așa că orice `bank` de pe un cont poate fi citit prin acest endpoint.
+
+        Conturile manuale nu au conexiune și nu apar aici.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BankStatus'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de conexiuni bancare.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bank'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/banci/listeaza-conexiunile-bancare
+  /banks/{id}:
+    get:
+      tags:
+        - Bănci
+      operationId: getBank
+      summary: Citește o conexiune bancară
+      description: Întoarce o conexiune bancară.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Conexiunea bancară.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bank'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/banci/citeste-o-conexiune-bancara
+  /accounts:
+    get:
+      tags:
+        - Conturi
+      operationId: listAccounts
+      summary: Listează conturile
+      description: |-
+        Întoarce toate conturile din spațiul de lucru, ordonate după `name`, apoi după `id`.
+
+        Această listă nu se paginează. Un spațiu de lucru are suficient de puține conturi ca să fie întoarse într-o singură cerere, așa că nu există `limit` și nu există `cursor`, iar `has_more` este întotdeauna `false`. Învelișul este același ca la orice altă listă, ca să nu fie nevoie de un caz special în codul clientului.
+
+        Soldurile sunt calculate la data de azi, în UTC. Pentru un sold la altă dată folosește `GET /accounts/{id}` cu `as_of`, sau `GET /balances` pentru toate conturile deodată.
+      parameters:
+        - name: bank_id
+          in: query
+          description: Doar conturile alimentate de aceste conexiuni bancare. Separate prin virgulă pentru mai multe.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - $ref: '#/components/parameters/account_expand'
+      responses:
+        '200':
+          description: Toate conturile din spațiul de lucru.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Account'
+                      has_more:
+                        type: boolean
+                        const: false
+                        description: Întotdeauna `false`. Această listă nu se paginează.
+                      next_cursor:
+                        type: 'null'
+                        description: Întotdeauna `null`. Această listă nu se paginează.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/conturi/listeaza-conturile
+  /accounts/{id}:
+    get:
+      tags:
+        - Conturi
+      operationId: getAccount
+      summary: Citește un cont
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/as_of'
+        - $ref: '#/components/parameters/account_expand'
+      responses:
+        '200':
+          description: Contul.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/conturi/citeste-un-cont
+  /transactions:
+    get:
+      tags:
+        - Tranzacții
+      operationId: listTransactions
+      summary: Listează tranzacțiile
+      description: |-
+        Întoarce tranzacțiile ordonate după `date` descrescător, apoi după `id`.
+
+        Aceasta este un extras de cont: câte un rând pentru fiecare mișcare, așa cum a consemnat-o contul. Sunt întoarse toate mișcările, inclusiv cele două părți ale unui transfer între conturile proprii ale spațiului de lucru și tranzacțiile excluse de utilizator din cash flow. Niciuna nu este marcată, pentru că niciuna nu schimbă ce s-a întâmplat pe cont.
+
+        Tranzacțiile bancare în așteptare sunt întoarse cu `status: pending`. Duplicatele detectate de ThinkOut nu sunt întoarse niciodată și nu pot fi cerute.
+
+        Când o tranzacție a fost împărțită în ThinkOut, este întoarsă mișcarea originală, nu și bucățile ei. Rapoartele numără altfel; vezi `/transactions/summary`.
+      parameters:
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+        - $ref: '#/components/parameters/bank_id'
+        - $ref: '#/components/parameters/account_id'
+        - $ref: '#/components/parameters/category_id'
+        - $ref: '#/components/parameters/label_id'
+        - $ref: '#/components/parameters/counterparty_id'
+        - $ref: '#/components/parameters/direction'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionStatus'
+        - $ref: '#/components/parameters/transaction_expand'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de tranzacții.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/tranzactii/listeaza-tranzactiile
+  /transactions/{id}:
+    get:
+      tags:
+        - Tranzacții
+      operationId: getTransaction
+      summary: Citește o tranzacție
+      description: Întoarce o tranzacție.
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/transaction_expand'
+      responses:
+        '200':
+          description: Tranzacția.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/tranzactii/citeste-o-tranzactie
+  /transactions/summary:
+    get:
+      tags:
+        - Rapoarte
+      operationId: summariseTransactions
+      summary: Sintetizează tranzacțiile
+      description: |-
+        Totaluri peste aceleași tranzacții pe care le listează `/transactions`, cu aceleași filtre, grupate pe o perioadă și pe cel mult o altă dimensiune.
+
+        **Ce numără este fix și nu poate fi schimbat**, ca cifrele să coincidă cu totalurile pe care le arată ThinkOut. Transferurile între conturile proprii ale spațiului de lucru, tranzacțiile excluse de utilizator și duplicatele sunt lăsate deoparte. Tranzacțiile împărțite sunt numărate prin bucățile lor, niciodată prin original, așa că nimic nu este numărat de două ori.
+
+        Niciuna dintre aceste distincții nu apare pe `/transactions`, care raportează mișcări, nu cash flow. Însumarea unei liste nu va reproduce, prin urmare, aceste cifre, și nici nu este menită să o facă.
+
+        Sumele sunt convertite în `currency`, implicit moneda spațiului de lucru. Fiecare tranzacție se convertește la cursul din data ei. Obiectul `conversion` din răspuns spune ce s-a făcut.
+
+        Rândurile grupate doar pe perioadă poartă ce arată ecranul de cash flow pentru perioada aceea: fluxurile, plus soldul de început, transferurile, mișcările excluse și soldul de final al conturilor din perimetru. Rândurile grupate după o a doua dimensiune poartă doar fluxurile, pentru că un sold per partener sau per categorie nu înseamnă nimic. `totals` acoperă întregul interval, ca apelantul să nu adune niciodată rânduri.
+
+        Filtrele se cumulează: `bank_id`, `account_id`, `category_id`, `counterparty_id`, `label_id` și `direction` pot fi date toate împreună și se combină cu AND, iar fiecare filtru pe id acceptă mai multe id-uri, combinate cu OR. Gruparea este lucrul mai strict: o perioadă și cel mult o dimensiune în plus. Cheltuielile de marketing pe un proiect, pe luni, înseamnă un apel cu două filtre și fără `group_by`; cheltuielile pe categorii și pe etichete deodată înseamnă două apeluri.
+
+        Trei forme de întrebare, trei cereri:
+
+        ```
+        Încasări și plăți pe luni, cu solduri
+        GET /transactions/summary?from=2026-03-01&to=2026-04-30&interval=month
+
+        Primii parteneri din trimestrul acesta
+        GET /transactions/summary?from=2026-07-01&to=2026-09-30&interval=month&group_by=counterparty&direction=outflow
+
+        Cash flow pe luni pentru conturile unei bănci
+        GET /transactions/summary?from=2026-03-01&to=2026-08-31&interval=month&bank_id=5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        ```
+
+        Exemplele de răspuns de mai jos le arată pe primele două.
+
+        Intervalul este întotdeauna explicit. Nu există perioade cu nume aici; un apelant care vrea „trimestrul trecut” calculează cele două date și le trimite, iar răspunsul le întoarce ca ecou.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Prima zi a intervalului, inclusiv.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          description: Ultima zi a intervalului, inclusiv.
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/interval'
+        - name: group_by
+          in: query
+          description: O a doua dimensiune de grupare, pe lângă intervalul de timp. Cel mult una. Omite-o pentru un singur rând per interval.
+          schema:
+            $ref: '#/components/schemas/GroupDimension'
+        - $ref: '#/components/parameters/currency'
+        - $ref: '#/components/parameters/bank_id'
+        - $ref: '#/components/parameters/account_id'
+        - $ref: '#/components/parameters/category_id'
+        - $ref: '#/components/parameters/label_id'
+        - $ref: '#/components/parameters/counterparty_id'
+        - $ref: '#/components/parameters/direction'
+      responses:
+        '200':
+          description: Sinteza.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+              examples:
+                By month, with balances:
+                  summary: One row per month; balance fields present because nothing else is grouped
+                  value:
+                    object: summary
+                    period:
+                      from: '2026-03-01'
+                      to: '2026-04-30'
+                      macro: null
+                      interval: month
+                    conversion:
+                      applied: true
+                      currency: RON
+                      basis: transaction_date
+                    group_by: null
+                    has_data: true
+                    totals:
+                      currency: RON
+                      inflow: '163900.00'
+                      outflow: '-118420.75'
+                      net: '45479.25'
+                      count: 401
+                    data:
+                      - period_start: '2026-03-01'
+                        period_end: '2026-03-31'
+                        group: null
+                        currency: RON
+                        inflow: '84200.00'
+                        outflow: '-61350.25'
+                        net: '22849.75'
+                        count: 212
+                        starting_balance: '128400.10'
+                        transfers: '0.00'
+                        excluded: '-1500.00'
+                        final_balance: '149749.85'
+                      - period_start: '2026-04-01'
+                        period_end: '2026-04-30'
+                        group: null
+                        currency: RON
+                        inflow: '79700.00'
+                        outflow: '-57070.50'
+                        net: '22629.50'
+                        count: 189
+                        starting_balance: '149749.85'
+                        transfers: '0.00'
+                        excluded: '0.00'
+                        final_balance: '172379.35'
+                By month and counterparty:
+                  summary: One row per month per counterparty; balance fields null on grouped rows
+                  value:
+                    object: summary
+                    period:
+                      from: '2026-07-01'
+                      to: '2026-08-31'
+                      macro: null
+                      interval: month
+                    conversion:
+                      applied: true
+                      currency: RON
+                      basis: transaction_date
+                    group_by: counterparty
+                    has_data: true
+                    totals:
+                      currency: RON
+                      inflow: '0.00'
+                      outflow: '-42461.00'
+                      net: '-42461.00'
+                      count: 9
+                    data:
+                      - period_start: '2026-07-01'
+                        period_end: '2026-07-31'
+                        group:
+                          dimension: counterparty
+                          id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+                          label: Orange Romania
+                        currency: RON
+                        inflow: '0.00'
+                        outflow: '-6115.50'
+                        net: '-6115.50'
+                        count: 2
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: '2026-07-01'
+                        period_end: '2026-07-31'
+                        group:
+                          dimension: counterparty
+                          id: 4d5e6f70-8192-4a3b-9c4d-5e6f7a8b9c0d
+                          label: Regus
+                        currency: RON
+                        inflow: '0.00'
+                        outflow: '-12000.00'
+                        net: '-12000.00'
+                        count: 1
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: '2026-08-01'
+                        period_end: '2026-08-31'
+                        group:
+                          dimension: counterparty
+                          id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+                          label: Orange Romania
+                        currency: RON
+                        inflow: '0.00'
+                        outflow: '-6115.50'
+                        net: '-6115.50'
+                        count: 2
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: '2026-08-01'
+                        period_end: '2026-08-31'
+                        group:
+                          dimension: counterparty
+                          id: 4d5e6f70-8192-4a3b-9c4d-5e6f7a8b9c0d
+                          label: Regus
+                        currency: RON
+                        inflow: '0.00'
+                        outflow: '-18230.00'
+                        net: '-18230.00'
+                        count: 4
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/rapoarte/sintetizeaza-tranzactiile
+  /forecasts/summary:
+    get:
+      tags:
+        - Rapoarte
+      operationId: summariseForecasts
+      summary: Sintetizează previziunile
+      description: |-
+        Totaluri peste previziunile cu dată, grupate pe un interval de timp și cel mult o altă dimensiune. Previziunile pot fi grupate și după `status`, spre deosebire de tranzacții.
+
+        `amount` însumează ce a fost planificat. `remaining_amount` însumează partea care nu a fost încă acoperită de tranzacții, așa că diferența dintre ele este ce s-a realizat deja.
+      parameters:
+        - $ref: '#/components/parameters/period'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+        - $ref: '#/components/parameters/interval'
+        - name: group_by
+          in: query
+          description: O a doua dimensiune de grupare, pe lângă intervalul de timp. Cel mult una.
+          schema:
+            $ref: '#/components/schemas/ForecastGroupDimension'
+        - $ref: '#/components/parameters/currency'
+        - $ref: '#/components/parameters/category_id'
+        - $ref: '#/components/parameters/label_id'
+        - $ref: '#/components/parameters/counterparty_id'
+        - $ref: '#/components/parameters/direction'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ForecastStatus'
+      responses:
+        '200':
+          description: Sinteza.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/rapoarte/sintetizeaza-previziunile
+  /balances:
+    get:
+      tags:
+        - Rapoarte
+      operationId: getBalances
+      summary: Citește soldurile
+      description: |-
+        Soldul fiecărui cont și totalul spațiului de lucru, într-un singur apel.
+
+        Soldurile sunt doar istorice. Un sold este soldul inițial al contului plus sumele cu semn ale tranzacțiilor sale până la sfârșitul zilei `as_of`, așa că o dată `as_of` din viitor este respinsă, în loc să primești cifra de azi purtând o dată viitoare. Pentru o poziție în viitor, calculează un raport de cash flow de tip `balances`, care proiectează mișcările planificate și le raportează separat de cele reale.
+
+        Conversia diferă aici față de sinteze, în mod deliberat. Un cont ține o singură monedă, deci soldul lui se convertește integral la un singur curs pentru `as_of`, răspunzând la întrebarea cât valorează poziția atunci. O sinteză de tranzacții convertește fiecare mișcare la data ei, răspunzând la întrebarea cât a costat fiecare la momentul respectiv.
+      parameters:
+        - $ref: '#/components/parameters/as_of'
+        - $ref: '#/components/parameters/currency'
+      responses:
+        '200':
+          description: Soldurile pe fiecare cont și totalul.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balances'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/rapoarte/citeste-soldurile
+  /cash-flow-views:
+    get:
+      tags:
+        - Rapoarte
+      operationId: listCashFlowViews
+      summary: Listează rapoartele de cash flow
+      description: |-
+        Un raport de cash flow este o definiție salvată de cineva din spațiul de lucru: o grupare pe intervale, o fereastră de timp, o monedă și un set de filtre.
+
+        Acest endpoint întoarce doar definițiile, fără cifre. Calculează unul cu `GET /cash-flow-views/{id}`.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de definiții de rapoarte de cash flow.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CashFlowView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/rapoarte/listeaza-rapoartele-de-cash-flow
+  /cash-flow-views/{id}:
+    get:
+      tags:
+        - Rapoarte
+      operationId: renderCashFlowView
+      summary: Calculează un raport de cash flow
+      description: |-
+        Calculează un raport salvat și îi întoarce cifrele ca rânduri plate.
+
+        Opțiunile salvate ale raportului sunt valorile implicite. Trimiterea parametrilor `period`, `from`, `to`, `interval` sau `currency` le suprascrie doar pentru cererea curentă; nimic nu se salvează. Un raport poate stoca o fereastră relativă, de exemplu următoarele șase luni, care este rezolvată aici și raportată în `period`.
+
+        **Cifrele reale și cele previzionate nu sunt niciodată amestecate.** Fiecare rând conține cifre `actual` și, când raportul include previziuni, cifre `forecast` separate. Ecranul din ThinkOut arată suma lor, deci adunându-le obții exact ce vezi acolo.
+
+        Modul de numărare diferă de `/transactions/summary`, în mod deliberat. O sinteză elimină complet transferurile și tranzacțiile excluse. Un raport de cash flow le raportează ca linii proprii de sold, alături de soldul inițial și cel final, așa cum funcționează situația de cash flow a produsului. Cele două vor da deci răspunsuri diferite la ceea ce pare aceeași întrebare, iar fiecare spune ce reguli a folosit.
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/period'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+        - $ref: '#/components/parameters/interval'
+        - $ref: '#/components/parameters/currency'
+      responses:
+        '200':
+          description: Raportul calculat.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashFlowViewResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/rapoarte/calculeaza-un-raport-de-cash-flow
+  /categories:
+    get:
+      tags:
+        - Categorii
+      operationId: listCategories
+      summary: Listează categoriile
+      description: |-
+        Întoarce arborele de categorii aplatizat, în ordinea în care îl afișează ThinkOut: încasările mai întâi, apoi plățile, iar în fiecare direcție fiecare categorie de nivel superior urmată imediat de copiii ei. Categoriile de pe același nivel urmează `position`. Citită de sus în jos, pagina redă așadar ecranul de categorii al produsului. `direction` restrânge la unul dintre cele două panouri.
+
+        Reconstruiește ierarhia cu `parent_id` și resortează după `position` în cadrul fiecărui `parent_id` dacă ai nevoie din nou de ordine după ce ai stocat rândurile.
+
+        Arborele are exact două niveluri. O categorie cu `parent_id` nu are niciodată copii proprii, iar ambele niveluri pot apărea pe o tranzacție. `direction` și `activity` ale unui copil coincid întotdeauna cu ale rădăcinii lui.
+      parameters:
+        - $ref: '#/components/parameters/direction'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de categorii.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/categorii/listeaza-categoriile
+  /categories/{id}:
+    get:
+      tags:
+        - Categorii
+      operationId: getCategory
+      summary: Citește o categorie
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Categoria.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/categorii/citeste-o-categorie
+  /counterparties:
+    get:
+      tags:
+        - Parteneri
+      operationId: listCounterparties
+      summary: Listează partenerii
+      description: Întoarce partenerii ordonați după `name`, apoi după `id`.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de parteneri.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Counterparty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/parteneri/listeaza-partenerii
+  /counterparties/{id}:
+    get:
+      tags:
+        - Parteneri
+      operationId: getCounterparty
+      summary: Citește un partener
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Partenerul.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Counterparty'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/parteneri/citeste-un-partener
+  /labels:
+    get:
+      tags:
+        - Etichete
+      operationId: listLabels
+      summary: Listează etichetele
+      description: Întoarce etichetele ordonate după `name`, apoi după `id`. Nu există filtre. Fiecare etichetă își poartă tipul, așa că un apelant care vrea etichetele grupate pe tipuri grupează pagina pe care o are deja.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de etichete.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/etichete/listeaza-etichetele
+  /labels/{id}:
+    get:
+      tags:
+        - Etichete
+      operationId: getLabel
+      summary: Citește o etichetă
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Eticheta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/etichete/citeste-o-eticheta
+  /forecasts:
+    get:
+      tags:
+        - Previziuni
+      operationId: listForecasts
+      summary: Listează previziunile
+      description: Întoarce previziunile cu dată, ordonate după `date` descrescător, apoi după `id`. Previziunile fără dată nu sunt incluse în versiunea 1.
+      parameters:
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+        - $ref: '#/components/parameters/category_id'
+        - $ref: '#/components/parameters/label_id'
+        - $ref: '#/components/parameters/counterparty_id'
+        - $ref: '#/components/parameters/direction'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ForecastStatus'
+        - $ref: '#/components/parameters/forecast_expand'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          description: O pagină de previziuni.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/List'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Forecast'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-mint:
+        href: /ro/api-reference/previziuni/listeaza-previziunile
+  /forecasts/{id}:
+    get:
+      tags:
+        - Previziuni
+      operationId: getForecast
+      summary: Citește o previziune
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/forecast_expand'
+      responses:
+        '200':
+          description: Previziunea.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forecast'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-mint:
+        href: /ro/api-reference/previziuni/citeste-o-previziune
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: O cheie API creată în setările ThinkOut. O cheie citește un singur spațiu de lucru.
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    from:
+      name: from
+      in: query
+      description: Cea mai veche `date` inclusă, inclusiv. Ignorat când este trimis `period`.
+      schema:
+        type: string
+        format: date
+    to:
+      name: to
+      in: query
+      description: Cea mai recentă `date` inclusă, inclusiv. Ignorat când este trimis `period`.
+      schema:
+        type: string
+        format: date
+    direction:
+      name: direction
+      in: query
+      schema:
+        $ref: '#/components/schemas/Direction'
+    bank_id:
+      name: bank_id
+      in: query
+      description: Doar rândurile de pe conturile alimentate de aceste conexiuni bancare. Separate prin virgulă pentru mai multe.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    account_id:
+      name: account_id
+      in: query
+      description: Doar rândurile de pe aceste conturi. Separate prin virgulă pentru mai multe.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    category_id:
+      name: category_id
+      in: query
+      description: Doar rândurile din aceste categorii. Separate prin virgulă pentru mai multe. La tranzacții, se potrivește și cu o tranzacție împărțită ale cărei bucăți se află în una dintre ele, chiar dacă rândul în sine nu are categorie.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    label_id:
+      name: label_id
+      in: query
+      description: Doar rândurile care poartă cel puțin una dintre aceste etichete. Separate prin virgulă pentru mai multe.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    counterparty_id:
+      name: counterparty_id
+      in: query
+      description: Doar rândurile atribuite acestor parteneri. Separate prin virgulă pentru mai multe.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    transaction_expand:
+      name: expand
+      in: query
+      description: |-
+        Relații de întors ca obiecte complete în loc de identificatori. Separate prin virgulă.
+
+        Fără el, fiecare relație este un identificator. Numind una aici, identificatorul este înlocuit cu obiectul către care arată. Extinderea merge un singur nivel; un nume nesuportat este respins.
+
+        Aici se acceptă: `account`, `category`, `counterparty`, `labels`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - account
+            - category
+            - counterparty
+            - labels
+      example: category,counterparty
+    account_expand:
+      name: expand
+      in: query
+      description: |-
+        Relații de întors ca obiecte complete în loc de identificatori. Separate prin virgulă.
+
+        Fără el, fiecare relație este un identificator. Numind una aici, identificatorul este înlocuit cu obiectul către care arată. Extinderea merge un singur nivel; un nume nesuportat este respins.
+
+        Aici se acceptă: `bank`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - bank
+      example: bank
+    forecast_expand:
+      name: expand
+      in: query
+      description: |-
+        Relații de întors ca obiecte complete în loc de identificatori. Separate prin virgulă.
+
+        Fără el, fiecare relație este un identificator. Numind una aici, identificatorul este înlocuit cu obiectul către care arată. Extinderea merge un singur nivel; un nume nesuportat este respins.
+
+        Aici se acceptă: `category`, `counterparty`, `labels`, `linked_transactions`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - category
+            - counterparty
+            - labels
+            - linked_transactions
+      example: category,linked_transactions
+    as_of:
+      name: as_of
+      in: query
+      description: Calculează soldurile la sfârșitul acestei zile. Implicit ziua curentă în UTC. O dată din viitor este respinsă, pentru că un sold este întotdeauna istoric.
+      schema:
+        type: string
+        format: date
+    period:
+      name: period
+      in: query
+      description: O fereastră de timp cu nume, rezolvată pe server și raportată înapoi în răspuns. Folosește-o în locul lui `from` și `to` ca să nu calculezi tu datele. Când sunt trimise ambele, `period` are prioritate.
+      schema:
+        $ref: '#/components/schemas/PeriodMacro'
+    interval:
+      name: interval
+      in: query
+      description: Intervalul de timp în care sunt grupate rândurile.
+      schema:
+        $ref: '#/components/schemas/Interval'
+    currency:
+      name: currency
+      in: query
+      description: Moneda în care sunt raportate totalurile. Implicit moneda spațiului de lucru. Obiectul `conversion` din răspuns spune dacă s-a făcut conversie și pe ce bază.
+      schema:
+        $ref: '#/components/schemas/Currency'
+    limit:
+      name: limit
+      in: query
+      description: Dimensiunea paginii.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+    cursor:
+      name: cursor
+      in: query
+      description: Token opac din `next_cursor` al paginii anterioare.
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Un parametru este invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              type: invalid_request
+              code: invalid_parameter
+              message: Parameter 'from' must be a date in YYYY-MM-DD format.
+              param: from
+              request_id: "0HNF8K3QJL2VM:00000001"
+    Unauthorized:
+      description: Cheia API lipsește, este necunoscută sau revocată.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              type: authentication
+              code: unauthorized
+              message: Invalid API key.
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+    NotFound:
+      description: Nu există niciun obiect cu acest id în spațiul de lucru al cheii.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              type: not_found
+              code: resource_not_found
+              message: No transaction with id 8f1c0a4e-2b1d-4c8e-9f3a-7d6e5c4b3a21.
+              param: id
+              request_id: "0HNF8K3QJL2VM:00000001"
+    RequestTooLarge:
+      description: Cererea este validă, dar ar calcula mai mult decât are voie un raport. Mesajul numește atât ce s-a cerut, cât și plafonul, ca cererea să poată fi restrânsă fără ghicit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              type: invalid_request
+              code: too_many_groups
+              message: Grouping by counterparty over this period produces 4,182 groups. The maximum is 1,000. Narrow the period or the filters.
+              param: group_by
+              request_id: "0HNF8K3QJL2VM:00000001"
+    RateLimited:
+      description: Prea multe cereri. Așteaptă numărul de secunde din `Retry-After`.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Secunde de așteptat înainte de a reîncerca.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              type: rate_limit
+              code: rate_limited
+              message: Rate limit exceeded. Retry after 12 seconds.
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+  schemas:
+    Money:
+      type: string
+      description: 'Sumă zecimală ca șir de caractere. Cu semn la tranzacții, previziuni și cifre din rapoarte, unde negativ înseamnă ieșire. Semnul este cel care contează: `direction` este derivat din el, iar cele două nu pot fi niciodată în contradicție.'
+      pattern: ^-?[0-9]+(\.[0-9]+)?$
+      example: '-1250.00'
+    Currency:
+      type: string
+      description: Cod de monedă alfabetic ISO 4217.
+      pattern: ^[A-Z]{3}$
+      example: RON
+    Direction:
+      type: string
+      description: Dacă banii intră sau ies. Pe o tranzacție sau pe o previziune urmează semnul lui `amount` și nu îl poate contrazice niciodată. Există ca răspunsurile să poată fi grupate și citite fără să inspectezi semnele.
+      enum:
+        - inflow
+        - outflow
+    Activity:
+      type: string
+      description: Secțiunea din situația fluxurilor de numerar căreia îi aparține categoria.
+      enum:
+        - operating
+        - investing
+        - financing
+    TransactionStatus:
+      type: string
+      description: Tranzacțiile `pending` vin de la bancă și nu sunt încă înregistrate. Suma unei tranzacții în așteptare se poate schimba când se înregistrează, iar `updated_at` se modifică atunci, deci actualizează după `id` în loc să tratezi un rând în așteptare ca final.
+      enum:
+        - booked
+        - pending
+    TransactionSource:
+      type: string
+      description: Cum a intrat tranzacția în ThinkOut.
+      enum:
+        - manual
+        - import
+        - bank
+    AccountSource:
+      type: string
+      description: Conturile `delegated` sunt conturi bancare pe care alt spațiu de lucru le-a delegat către acesta.
+      enum:
+        - manual
+        - bank
+        - delegated
+    ForecastStatus:
+      type: string
+      description: '`planned` este în viitor, fără tranzacții asociate. `overdue` este în trecut, fără niciuna. `partial` are unele tranzacții asociate. `realised` este completă.'
+      enum:
+        - planned
+        - overdue
+        - partial
+        - realised
+    RecurrenceInterval:
+      type: string
+      enum:
+        - day
+        - week
+        - month
+        - year
+    Interval:
+      type: string
+      description: O perioadă de grupare pentru rândurile de raport. Aceleași perioade pe care le oferă ecranul de cash flow din ThinkOut.
+      enum:
+        - day
+        - week
+        - month
+      default: month
+    PeriodMacro:
+      type: string
+      description: O fereastră de timp cu nume, rezolvată pe server. Datele la care s-a rezolvat sunt întotdeauna raportate înapoi, ca cel care apelează să verifice că a cerut fereastra la care se gândea.
+      enum:
+        - this_month
+        - last_month
+        - this_quarter
+        - last_quarter
+        - this_year
+        - last_year
+        - month_to_date
+        - quarter_to_date
+        - year_to_date
+        - last_30_days
+        - last_90_days
+        - last_12_months
+    GroupDimension:
+      type: string
+      description: O dimensiune după care se grupează rândurile raportului, pe lângă intervalul de timp.
+      enum:
+        - category
+        - counterparty
+        - label
+        - account
+        - activity
+        - direction
+    ForecastGroupDimension:
+      type: string
+      description: La fel ca `GroupDimension`, plus statusul previziunii. Previziunile nu au cont.
+      enum:
+        - category
+        - counterparty
+        - label
+        - activity
+        - direction
+        - status
+    List:
+      type: object
+      required:
+        - object
+        - data
+        - has_more
+        - next_cursor
+      properties:
+        object:
+          type: string
+          const: list
+        data:
+          type: array
+          items: {}
+        has_more:
+          type: boolean
+          description: Dacă mai există o pagină.
+        next_cursor:
+          type:
+            - string
+            - 'null'
+          description: Trimite-l ca `cursor` pentru pagina următoare. `null` pe ultima pagină.
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - type
+            - code
+            - message
+            - param
+            - request_id
+          properties:
+            type:
+              type: string
+              enum:
+                - invalid_request
+                - authentication
+                - not_found
+                - rate_limit
+                - server
+            code:
+              type: string
+              description: Motiv stabil, citibil de o mașină. Ramifică pe acesta, nu pe `message`. Codurile specifice rapoartelor sunt `too_many_groups`, `period_too_long`, `as_of_in_future` și `invalid_expand`.
+            message:
+              type: string
+              description: Explicație pentru oameni, în engleză. Formularea se poate schimba.
+            param:
+              type:
+                - string
+                - 'null'
+              description: Parametrul de query sau de cale vinovat, când există unul.
+            request_id:
+              type: string
+              description: Menționează-l când contactezi suportul.
+    ResolvedPeriod:
+      type: object
+      description: Fereastra efectiv calculată, după rezolvarea oricărei macrocomenzi sau a datelor relative salvate.
+      required:
+        - from
+        - to
+        - macro
+        - interval
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        macro:
+          oneOf:
+            - $ref: '#/components/schemas/PeriodMacro'
+            - type: 'null'
+          description: Macrocomanda care a produs aceste date, sau `null` când au fost trimise direct.
+        interval:
+          $ref: '#/components/schemas/Interval'
+    Conversion:
+      type: object
+      description: Ce s-a făcut pentru ca sumele să fie comparabile.
+      required:
+        - applied
+        - currency
+        - basis
+      properties:
+        applied:
+          type: boolean
+          description: '`false` când toate sumele erau deja în `currency`.'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        basis:
+          type: string
+          description: '`transaction_date` convertește fiecare mișcare la cursul din propria ei dată, ceea ce folosesc totalurile peste mișcări. `balance_date` convertește un sold întreg la un singur curs, ceea ce folosesc soldurile, pentru că un cont ține o singură monedă.'
+          enum:
+            - transaction_date
+            - balance_date
+            - none
+    ReportGroup:
+      type: object
+      description: După ce este grupat un rând de raport. `null` la rândurile grupate doar pe interval.
+      required:
+        - dimension
+        - id
+        - label
+      properties:
+        dimension:
+          type: string
+          example: category
+        id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: Identificatorul obiectului grupat, ca un total să poată fi urmărit înapoi la rândurile lui într-un singur apel. `null` pentru dimensiunile care nu sunt obiecte, cum ar fi `direction`.
+        label:
+          type: string
+          description: Numele grupului, în formă citibilă.
+          example: Telecom
+    SummaryTotals:
+      type: object
+      description: Întregul interval însumat, după aceleași excluderi ca rândurile.
+      required:
+        - currency
+        - inflow
+        - outflow
+        - net
+        - count
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+        inflow:
+          $ref: '#/components/schemas/Money'
+        outflow:
+          $ref: '#/components/schemas/Money'
+        net:
+          $ref: '#/components/schemas/Money'
+        count:
+          type: integer
+    SummaryRow:
+      type: object
+      required:
+        - period_start
+        - period_end
+        - group
+        - currency
+        - inflow
+        - outflow
+        - net
+        - count
+        - starting_balance
+        - transfers
+        - excluded
+        - final_balance
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        group:
+          oneOf:
+            - $ref: '#/components/schemas/ReportGroup'
+            - type: 'null'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        inflow:
+          $ref: '#/components/schemas/Money'
+        outflow:
+          $ref: '#/components/schemas/Money'
+        net:
+          $ref: '#/components/schemas/Money'
+        count:
+          type: integer
+          description: Tranzacțiile din spatele acestui rând, după excluderile raportului.
+        starting_balance:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+          description: Soldul conturilor din perimetru la începutul perioadei. Prezent pe rândurile grupate doar pe perioadă; `null` pe rândurile grupate după o a doua dimensiune.
+        transfers:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+          description: Netul transferurilor între conturile proprii ale spațiului de lucru în perioadă. Nu face parte din fluxuri. `null` pe rândurile grupate.
+        excluded:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+          description: Netul mișcărilor excluse de utilizator din cash flow în perioadă. Nu face parte din fluxuri. `null` pe rândurile grupate.
+        final_balance:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+          description: 'Soldul la sfârșitul perioadei: soldul de început plus net, transferuri și excluse. `null` pe rândurile grupate.'
+    Summary:
+      type: object
+      required:
+        - object
+        - period
+        - conversion
+        - group_by
+        - has_data
+        - totals
+        - data
+      properties:
+        object:
+          type: string
+          const: summary
+        period:
+          $ref: '#/components/schemas/ResolvedPeriod'
+        conversion:
+          $ref: '#/components/schemas/Conversion'
+        group_by:
+          oneOf:
+            - $ref: '#/components/schemas/GroupDimension'
+            - type: 'null'
+        has_data:
+          type: boolean
+          description: '`false` când nu s-a potrivit nimic. Distinge între „nu există tranzacții aici” și totaluri care chiar au ieșit zero.'
+        totals:
+          $ref: '#/components/schemas/SummaryTotals'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummaryRow'
+      example:
+        object: summary
+        period:
+          from: '2026-03-01'
+          to: '2026-04-30'
+          macro: null
+          interval: month
+        conversion:
+          applied: true
+          currency: RON
+          basis: transaction_date
+        group_by: null
+        has_data: true
+        totals:
+          currency: RON
+          inflow: '163900.00'
+          outflow: '-118420.75'
+          net: '45479.25'
+          count: 401
+        data:
+          - period_start: '2026-03-01'
+            period_end: '2026-03-31'
+            group: null
+            currency: RON
+            inflow: '84200.00'
+            outflow: '-61350.25'
+            net: '22849.75'
+            count: 212
+            starting_balance: '128400.10'
+            transfers: '0.00'
+            excluded: '-1500.00'
+            final_balance: '149749.85'
+          - period_start: '2026-04-01'
+            period_end: '2026-04-30'
+            group: null
+            currency: RON
+            inflow: '79700.00'
+            outflow: '-57070.50'
+            net: '22629.50'
+            count: 189
+            starting_balance: '149749.85'
+            transfers: '0.00'
+            excluded: '0.00'
+            final_balance: '172379.35'
+    ForecastSummaryRow:
+      type: object
+      required:
+        - period_start
+        - period_end
+        - group
+        - currency
+        - amount
+        - remaining_amount
+        - count
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        group:
+          oneOf:
+            - $ref: '#/components/schemas/ReportGroup'
+            - type: 'null'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        amount:
+          $ref: '#/components/schemas/Money'
+          description: Total planificat.
+        remaining_amount:
+          $ref: '#/components/schemas/Money'
+          description: Total neacoperit încă de tranzacții.
+        count:
+          type: integer
+    ForecastSummary:
+      type: object
+      required:
+        - object
+        - period
+        - conversion
+        - group_by
+        - has_data
+        - data
+      properties:
+        object:
+          type: string
+          const: forecast_summary
+        period:
+          $ref: '#/components/schemas/ResolvedPeriod'
+        conversion:
+          $ref: '#/components/schemas/Conversion'
+        group_by:
+          oneOf:
+            - $ref: '#/components/schemas/ForecastGroupDimension'
+            - type: 'null'
+        has_data:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastSummaryRow'
+    CashFlowViewType:
+      type: string
+      description: '`flows` raportează mișcările pe interval. `balances` raportează poziția la fiecare capăt de interval, inclusiv una proiectată când raportul include previziuni.'
+      enum:
+        - flows
+        - balances
+    CashFlowViewOptions:
+      type: object
+      description: Fereastra de timp și gruparea salvate cu raportul. Oricare poate fi suprascrisă la calcul.
+      required:
+        - interval
+        - from
+        - to
+        - currency
+        - includes_forecasts
+      properties:
+        interval:
+          $ref: '#/components/schemas/Interval'
+        from:
+          type: string
+          format: date
+          description: Rezolvată din fereastra salvată a raportului, care poate fi relativă.
+        to:
+          type: string
+          format: date
+        currency:
+          $ref: '#/components/schemas/Currency'
+        includes_forecasts:
+          type: boolean
+          description: Dacă raportul salvat proiectează și mișcările planificate, nu doar pe cele reale.
+    CashFlowViewFilters:
+      type: object
+      description: Filtrele salvate cu raportul, ca identificatori.
+      required:
+        - account_ids
+        - activity_ids
+        - category_ids
+        - label_ids
+        - counterparty_ids
+      properties:
+        account_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        activity_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        category_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        label_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        counterparty_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CashFlowView:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - type
+        - options
+        - filters
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: cash_flow_view
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Operating Activities
+        type:
+          $ref: '#/components/schemas/CashFlowViewType'
+        options:
+          $ref: '#/components/schemas/CashFlowViewOptions'
+        filters:
+          $ref: '#/components/schemas/CashFlowViewFilters'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CashFlowFigures:
+      type: object
+      description: Mișcările dintr-un interval. La un raport de tip `balances` sunt prezente și componentele soldului, fiecare cu numele ei, în loc să fie topite într-o singură cifră.
+      required:
+        - inflow
+        - outflow
+        - net
+      properties:
+        inflow:
+          $ref: '#/components/schemas/Money'
+        outflow:
+          $ref: '#/components/schemas/Money'
+        net:
+          $ref: '#/components/schemas/Money'
+        starting_balance:
+          $ref: '#/components/schemas/Money'
+        transfers:
+          $ref: '#/components/schemas/Money'
+          description: Mișcări între conturile spațiului de lucru. Raportate aici, nu numărate ca fluxuri.
+        excluded:
+          $ref: '#/components/schemas/Money'
+          description: Mișcări excluse de utilizator din cash flow. Raportate aici, nu numărate ca fluxuri.
+        opened_accounts:
+          $ref: '#/components/schemas/Money'
+          description: Soldurile inițiale ale conturilor care încep în acest interval.
+        final_balance:
+          $ref: '#/components/schemas/Money'
+    CashFlowViewRow:
+      type: object
+      required:
+        - period_start
+        - period_end
+        - row
+        - actual
+        - forecast
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        row:
+          $ref: '#/components/schemas/CashFlowViewRowKey'
+        actual:
+          $ref: '#/components/schemas/CashFlowFigures'
+        forecast:
+          oneOf:
+            - $ref: '#/components/schemas/CashFlowFigures'
+            - type: 'null'
+          description: Mișcări planificate, ținute separat de `actual` ca o proiecție să nu fie luată drept ceva ce s-a întâmplat. `null` când raportul nu include previziuni. Ecranul din ThinkOut arată cele două adunate.
+    CashFlowViewRowKey:
+      type: object
+      description: Ce raportează rândul. Arborele de categorii este aplatizat; reconstruiește-l cu `parent_id`.
+      required:
+        - kind
+        - id
+        - label
+        - parent_id
+      properties:
+        kind:
+          type: string
+          enum:
+            - total
+            - activity
+            - category
+        id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        label:
+          type: string
+          example: Telecom
+        parent_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    CashFlowViewResult:
+      type: object
+      required:
+        - object
+        - view
+        - period
+        - conversion
+        - has_data
+        - data
+      properties:
+        object:
+          type: string
+          const: cash_flow_view_result
+        view:
+          $ref: '#/components/schemas/CashFlowView'
+        period:
+          $ref: '#/components/schemas/ResolvedPeriod'
+        conversion:
+          $ref: '#/components/schemas/Conversion'
+        has_data:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashFlowViewRow'
+    AccountBalance:
+      type: object
+      required:
+        - account_id
+        - name
+        - native_currency
+        - native_balance
+        - balance
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ING Curent
+        native_currency:
+          $ref: '#/components/schemas/Currency'
+        native_balance:
+          $ref: '#/components/schemas/Money'
+          description: Soldul în moneda proprie a contului, neconvertit.
+        balance:
+          $ref: '#/components/schemas/Money'
+          description: Același sold în moneda cerută.
+    Balances:
+      type: object
+      required:
+        - object
+        - as_of
+        - conversion
+        - total
+        - accounts
+      properties:
+        object:
+          type: string
+          const: balances
+        as_of:
+          type: string
+          format: date
+          description: Ziua a cărei poziție la sfârșit de zi este raportată.
+        conversion:
+          $ref: '#/components/schemas/Conversion'
+        total:
+          $ref: '#/components/schemas/Money'
+          description: Toate conturile adunate, în moneda cerută.
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountBalance'
+    BankDetails:
+      type: object
+      description: 'Câmpuri brute primite de la bancă. Prezente doar pe tranzacțiile cu `source: bank`.'
+      required:
+        - payer
+        - payer_details
+        - payee
+        - payee_details
+        - reference
+        - additional
+      properties:
+        payer:
+          type:
+            - string
+            - 'null'
+        payer_details:
+          type:
+            - string
+            - 'null'
+          description: Identificatorii contului plătitorului, așa cum sunt furnizați de bancă.
+        payee:
+          type:
+            - string
+            - 'null'
+        payee_details:
+          type:
+            - string
+            - 'null'
+        reference:
+          type:
+            - string
+            - 'null'
+          description: Referința plății sau linia de informații.
+        additional:
+          type:
+            - string
+            - 'null'
+    ExpandableCategory:
+      description: Identificatorul unei categorii, sau categoria completă când este numită în `expand`.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: '#/components/schemas/Category'
+    ExpandableCounterparty:
+      description: Identificatorul unui partener, partenerul complet când este numit în `expand`, sau `null` când tranzacția nu este atribuită.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: '#/components/schemas/Counterparty'
+        - type: 'null'
+    ExpandableAccount:
+      description: Identificatorul unui cont, sau contul complet când este numit în `expand`.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: '#/components/schemas/Account'
+    ExpandableLabels:
+      description: Identificatori de etichete, sau etichetele complete când `labels` este numit în `expand`.
+      type: array
+      items:
+        oneOf:
+          - type: string
+            format: uuid
+          - $ref: '#/components/schemas/Label'
+    Transaction:
+      type: object
+      required:
+        - object
+        - id
+        - date
+        - amount
+        - currency
+        - direction
+        - status
+        - source
+        - description
+        - comment
+        - account
+        - category
+        - counterparty
+        - labels
+        - bank_details
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: transaction
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: Data înregistrării. Nu există componentă de timp.
+          example: '2026-09-03'
+        amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        source:
+          $ref: '#/components/schemas/TransactionSource'
+        description:
+          type:
+            - string
+            - 'null'
+          example: ORANGE ROMANIA SA
+        comment:
+          type:
+            - string
+            - 'null'
+          description: Text liber adăugat de utilizatori în ThinkOut.
+        account:
+          $ref: '#/components/schemas/ExpandableAccount'
+        category:
+          oneOf:
+            - $ref: '#/components/schemas/ExpandableCategory'
+            - type: 'null'
+          description: '`null` când tranzacția nu are categorie. Aici intră și orice tranzacție împărțită în ThinkOut, unde categorisirea a trecut pe bucăți, iar bucățile nu sunt expuse de acest API.'
+        counterparty:
+          $ref: '#/components/schemas/ExpandableCounterparty'
+        labels:
+          $ref: '#/components/schemas/ExpandableLabels'
+        bank_details:
+          oneOf:
+            - $ref: '#/components/schemas/BankDetails'
+            - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: transaction
+        id: 8f1c0a4e-2b1d-4c8e-9f3a-7d6e5c4b3a21
+        date: '2026-09-03'
+        amount: '-1250.00'
+        currency: RON
+        direction: outflow
+        status: booked
+        source: bank
+        description: ORANGE ROMANIA SA
+        comment: null
+        account: c2d7e8f9-1a2b-4c3d-8e9f-0a1b2c3d4e5f
+        category: 3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d
+        counterparty: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        labels:
+          - 1f2e3d4c-5b6a-4978-8877-665544332211
+        bank_details:
+          payer: THINKOUT SRL
+          payer_details: RO49INGB0000999900000001
+          payee: ORANGE ROMANIA SA
+          payee_details: RO12BTRL0000000000000002
+          reference: Factura 2026-08 nr 1234567
+          additional: null
+        created_at: '2026-09-03T08:12:44Z'
+        updated_at: '2026-09-03T08:12:44Z'
+    BankStatus:
+      type: string
+      description: |-
+        Starea conexiunii la ultimul schimb de date dintre ThinkOut și furnizor.
+
+        `connected` înseamnă că funcționează. `loading` este o sincronizare în curs. `requires_action` cere ca o persoană să se autentifice sau să reaprobe conexiunea în ThinkOut, iar până atunci nu mai vin tranzacții noi. `error` este o eroare pe care ThinkOut nu a putut să o rezolve singur și acoperă orice stare a furnizorului pe care ThinkOut nu o poate încadra.
+
+        Doar `connected` înseamnă că datele din spate sunt la zi.
+      enum:
+        - connected
+        - loading
+        - requires_action
+        - error
+    Bank:
+      type: object
+      description: O autorizare cu o singură bancă. Mai multe conturi pot folosi aceeași conexiune, iar un spațiu de lucru poate avea mai multe conexiuni la aceeași bancă.
+      required:
+        - object
+        - id
+        - name
+        - country_code
+        - status
+        - last_sync_at
+        - consent_expires_at
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: bank
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Numele băncii, așa cum îl raportează furnizorul.
+          example: ING Bank
+        country_code:
+          type:
+            - string
+            - 'null'
+          description: Țara băncii, cod ISO 3166-1 alpha-2.
+          pattern: ^[A-Z]{2}$
+          example: RO
+        status:
+          $ref: '#/components/schemas/BankStatus'
+        last_sync_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: |-
+            Când a întors furnizorul date cu succes ultima oară. `null` dacă nu a făcut-o niciodată.
+
+            Aceasta este vechimea datelor, nu vechimea conexiunii. O conexiune poate sta pe `connected` cu un `last_sync_at` vechi de câteva zile, iar acesta este cazul care merită o alertă.
+        consent_expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Când trebuie reînnoit consimțământul bancar, dacă furnizorul îl raportează. După ce trece, conexiunea nu mai întoarce tranzacții noi până când cineva o reaprobă.
+        created_at:
+          type: string
+          format: date-time
+          description: Când a fost autorizată prima dată conexiunea.
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: bank
+        id: 5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        name: ING Bank
+        country_code: RO
+        status: connected
+        last_sync_at: '2026-09-03T06:00:00Z'
+        consent_expires_at: '2026-11-30T00:00:00Z'
+        created_at: '2024-01-01T10:00:00Z'
+        updated_at: '2026-09-03T06:00:00Z'
+    ExpandableBank:
+      description: Identificatorul unei conexiuni bancare, conexiunea completă când este numită în `expand`, sau `null` pentru un cont manual.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: '#/components/schemas/Bank'
+        - type: 'null'
+    Account:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - currency
+        - group
+        - source
+        - balance
+        - balance_as_of
+        - opening_balance
+        - opening_date
+        - bank
+        - external_account_id
+        - original_name
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: account
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ING Curent
+        currency:
+          $ref: '#/components/schemas/Currency'
+        group:
+          type:
+            - string
+            - 'null'
+          description: Grupare cu text liber, atribuită în ThinkOut.
+          example: Operational
+        source:
+          $ref: '#/components/schemas/AccountSource'
+        balance:
+          $ref: '#/components/schemas/Money'
+        balance_as_of:
+          type: string
+          format: date
+          description: Ziua al cărei sold de sfârșit de zi este raportat. Calculat la momentul cererii.
+        opening_balance:
+          $ref: '#/components/schemas/Money'
+        opening_date:
+          type: string
+          format: date
+          description: Data la care se aplică soldul inițial. Nu sunt așteptate tranzacții înainte de ea.
+        bank:
+          $ref: '#/components/schemas/ExpandableBank'
+        external_account_id:
+          type:
+            - string
+            - 'null'
+          description: Identificatorul contului la furnizor, util pentru reconciliere. `null` pentru conturile manuale.
+        original_name:
+          type:
+            - string
+            - 'null'
+          description: Numele contului așa cum îl raportează banca, înainte de orice redenumire în ThinkOut. `null` pentru conturile manuale.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: account
+        id: c2d7e8f9-1a2b-4c3d-8e9f-0a1b2c3d4e5f
+        name: ING Curent
+        currency: RON
+        group: Operational
+        source: bank
+        balance: '15230.45'
+        balance_as_of: '2026-09-03'
+        opening_balance: '1000.00'
+        opening_date: '2024-01-01'
+        bank: 5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        external_account_id: ACC-00012345
+        original_name: Cont curent RON
+        created_at: '2024-01-01T10:00:00Z'
+        updated_at: '2026-08-30T06:00:00Z'
+    Category:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - code
+        - direction
+        - activity
+        - parent_id
+        - position
+        - color
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: category
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Telecom
+        code:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Identificatorul categoriei în șablonul din care a fost creat acest spațiu de lucru. `null` pentru o categorie creată de cineva.
+
+            Doar `uncategorized_inflows` și `uncategorized_outflows` merită tratate special. Ele marchează cele două categorii în care stau banii neclasificați, există în fiecare spațiu de lucru, iar ThinkOut refuză să le șteargă. Orice alt cod depinde de șablonul folosit.
+          example: uncategorized_outflows
+        direction:
+          $ref: '#/components/schemas/Direction'
+        activity:
+          $ref: '#/components/schemas/Activity'
+        parent_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: '`null` pentru categoriile de nivel superior.'
+        position:
+          type: integer
+          description: Ordinea între categoriile de pe același nivel, ca în ThinkOut.
+        color:
+          type:
+            - string
+            - 'null'
+          description: Culoare hex cu litere mici, ca în ThinkOut.
+          pattern: ^#[0-9a-f]{6}$
+          example: '#1b7fe4'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: category
+        id: 3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d
+        name: Telecom
+        code: null
+        direction: outflow
+        activity: operating
+        parent_id: 6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d
+        position: 2
+        color: '#1b7fe4'
+        created_at: '2024-01-01T10:00:00Z'
+        updated_at: '2024-01-01T10:00:00Z'
+    Counterparty:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - country_code
+        - color
+        - symbol
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: counterparty
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Orange
+        country_code:
+          type:
+            - string
+            - 'null'
+          description: Cod de țară ISO 3166-1 alpha-2.
+          pattern: ^[A-Z]{2}$
+          example: RO
+        color:
+          type:
+            - string
+            - 'null'
+          pattern: ^#[0-9a-f]{6}$
+        symbol:
+          type:
+            - string
+            - 'null'
+          description: Text scurt afișat în avatarul partenerului în ThinkOut.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: counterparty
+        id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        name: Orange
+        country_code: RO
+        color: '#e4571b'
+        symbol: OR
+        created_at: '2024-02-14T08:00:00Z'
+        updated_at: '2024-02-14T08:00:00Z'
+    LabelType:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Quarter
+    Label:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - type
+        - color
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: label
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Q3
+        type:
+          oneOf:
+            - $ref: '#/components/schemas/LabelType'
+            - type: 'null'
+          description: Grupul din care face parte eticheta, sau `null` când nu are niciunul. Un tip apare odată cu prima etichetă care îl folosește și dispare odată cu ultima, așa că nu are endpoint propriu.
+        color:
+          type:
+            - string
+            - 'null'
+          pattern: ^#[0-9a-f]{6}$
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: label
+        id: 1f2e3d4c-5b6a-4978-8877-665544332211
+        name: Q3
+        type:
+          id: 7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f
+          name: Quarter
+        color: '#7c3aed'
+        created_at: '2026-01-05T09:00:00Z'
+        updated_at: '2026-01-05T09:00:00Z'
+    Recurrence:
+      type: object
+      description: Planul recurent din care a fost generată această previziune.
+      required:
+        - id
+        - name
+        - interval
+        - every
+        - start_date
+        - end_date
+        - occurrences
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Office rent
+        interval:
+          $ref: '#/components/schemas/RecurrenceInterval'
+        every:
+          type: integer
+          minimum: 1
+          description: 'Numărul de intervale între apariții. `interval: month, every: 1` înseamnă lunar.'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        occurrences:
+          type: integer
+          description: Numărul total de previziuni generate de plan.
+    Forecast:
+      type: object
+      required:
+        - object
+        - id
+        - date
+        - amount
+        - remaining_amount
+        - currency
+        - direction
+        - status
+        - description
+        - comment
+        - category
+        - counterparty
+        - labels
+        - recurrence
+        - linked_transactions
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: forecast
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: Ziua în care este așteptată mișcarea.
+        amount:
+          $ref: '#/components/schemas/Money'
+        remaining_amount:
+          $ref: '#/components/schemas/Money'
+          description: Partea din `amount` neacoperită încă de tranzacții. Egală cu `amount` cât timp este `planned` sau `overdue`, `"0"` când este `realised`.
+        currency:
+          $ref: '#/components/schemas/Currency'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        status:
+          $ref: '#/components/schemas/ForecastStatus'
+        description:
+          type:
+            - string
+            - 'null'
+        comment:
+          type:
+            - string
+            - 'null'
+        category:
+          $ref: '#/components/schemas/ExpandableCategory'
+        counterparty:
+          $ref: '#/components/schemas/ExpandableCounterparty'
+        labels:
+          $ref: '#/components/schemas/ExpandableLabels'
+        recurrence:
+          oneOf:
+            - $ref: '#/components/schemas/Recurrence'
+            - type: 'null'
+        linked_transactions:
+          type: array
+          description: Tranzacțiile potrivite cu această previziune, ca identificatori. Numește `linked_transactions` în `expand` ca să primești tranzacțiile în sine, ceea ce răspunde dacă un cost planificat s-a materializat, fără un apel pentru fiecare identificator.
+          items:
+            oneOf:
+              - type: string
+                format: uuid
+              - $ref: '#/components/schemas/Transaction'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: forecast
+        id: 7e6d5c4b-3a29-4180-9f8e-7d6c5b4a3928
+        date: '2026-09-15'
+        amount: '-4200.00'
+        remaining_amount: '-4200.00'
+        currency: EUR
+        direction: outflow
+        status: planned
+        description: Office rent
+        comment: null
+        category: 2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b
+        counterparty: 8b9c0d1e-2f3a-4b5c-8d6e-7f8a9b0c1d2e
+        labels:
+          - 0f1e2d3c-4b5a-4968-8776-655443322110
+        recurrence:
+          id: 4c5d6e7f-8091-4a2b-9c3d-4e5f6a7b8c9d
+          name: Office rent
+          interval: month
+          every: 1
+          start_date: '2026-01-15'
+          end_date: '2026-12-15'
+          occurrences: 12
+        linked_transactions: []
+        created_at: '2025-12-20T09:30:00Z'
+        updated_at: '2025-12-20T09:30:00Z'

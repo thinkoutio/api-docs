@@ -1,0 +1,156 @@
+---
+title: "Exemple"
+sidebarTitle: "Exemple"
+description: "Ce poți întreba asistentul, cum arată un răspuns și cum restrângi o întrebare după categorie, etichetă, bancă sau partener."
+---
+
+## Prima ta întrebare adresată asistentului
+
+După ce conectorul e activ, poți începe cu o întrebare precum:
+
+> Care e soldul meu acum și care a fost evoluția în ultimele șase luni?
+
+Ar trebui să primești un tabel cu valorile, perioada și valuta. Dacă ai mai
+multe spații de lucru, menționează în întrebare pentru care dintre ele vrei
+răspunsul. Dacă nu, te întreabă asistentul, și apoi ține minte pentru tot restul
+conversației.
+
+## Ce poți întreba
+
+Întrebările pot fi scrise exact cum le-ai spune cu voce tare: „total încasări de
+la 1 aprilie până azi", „rezultate totale pentru semestrul trecut", „rezultate
+din septembrie anul acesta față de septembrie anul trecut". Nu îți face griji
+dacă greșești vreun cuvânt — asistentul se descurcă și cu greșeli de tastare, și
+cu diacritice lipsă.
+
+<Note>
+  Întrebările marcate cu <strong>*</strong> primesc răspuns din raționamentul
+  asistentului peste totalurile istorice din ThinkOut. Momentan, nu se bazează pe
+  previziunile sau bugetele ThinkOut — asistentul îți spune ce perioadă și ce
+  presupuneri a folosit, iar tu poți să le citești ca pe o interpretare
+  documentată a trecutului, nu ca pe o proiecție.
+</Note>
+
+<video
+  src="/videos/mcp/worst-cash-weeks-ro.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Asistentul răspunde la o întrebare despre cele mai slabe săptămâni ale anului"
+/>
+
+<AccordionGroup>
+  <Accordion title="Solduri și cash flow" defaultOpen>
+    - „Care e soldul meu acum?" „Dar pe 30 iunie?"
+    - „Încasări și plăți în ultimele șase luni, total și lună de lună."
+    - „Cash flow lunar pentru semestrul trecut, doar pentru conturile Banca Transilvania."
+    - „Arată-mi rezultatul net de luna trecută de la ING."
+    - „Septembrie anul acesta față de septembrie anul trecut."
+    - „De ce a scăzut soldul în iunie?"
+
+    <video
+      src="/videos/mcp/balance-comparison-ro.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      aria-label="Asistentul răspunde la o întrebare despre soldul curent și evoluția lui"
+    />
+  </Accordion>
+
+  <Accordion title="Lichiditate proiectată și risc de cash">
+    - „Cu ritmul actual de cheltuieli, pentru câte luni îmi mai ajunge cash-ul?" *
+    - „Care e soldul mediu zilnic în trimestrul acesta față de trimestrul trecut?"
+    - „Care au fost cele mai slabe trei săptămâni ale anului din punctul de vedere al cash-ului?"
+  </Accordion>
+
+  <Accordion title="Concentrare și risc pe clienți">
+    - „Ce procent din venituri vine de la primii trei clienți?"
+    - „Care clienți mi-au plătit mai puțin anul acesta decât anul trecut?"
+    - „Cu ce client a crescut cel mai mult relația de la an la an?"
+    - „Cât ne-a plătit Clientul X în prima jumătate a anului?"
+  </Accordion>
+
+  <Accordion title="Comportament de plată, în ambele direcții">
+    - „Pe care furnizori îi plătesc cel mai repede și pe care îi tot amân?"
+    - „Există vreun client constant care plătește mai greu decât plătea înainte?"
+    - „Când ne-a plătit X ultima dată și cât de des plătește?"
+    - „Cele mai mari plăți din conturile ING Bank de la ianuarie 2026 încoace."
+  </Accordion>
+
+  <Accordion title="Controlul costurilor și cheltuieli recurente">
+    - „Care cost de la furnizori a crescut cel mai mult față de anul trecut, procentual?"
+    - „Care e cel mai scump abonament la un tool pe care îl plătesc?"
+    - „Primii cinci furnizori din trimestrul acesta."
+  </Accordion>
+
+  <Accordion title="Categorii și tranzacții necategorisite">
+    - „Care tranzacții sunt încă necategorisite? Arată-mi lista, nu doar totalul."
+    - „Ce categorie de cheltuieli a crescut cel mai mult ca pondere din costurile totale anul acesta?"
+    - „Cât am cheltuit în total pe [etichetă] de când a început proiectul?"
+  </Accordion>
+
+  <Accordion title="Anomalii și lucruri de verificat încă o dată">
+    - „Au fost luna asta tranzacții neobișnuit de mari față de tiparul meu normal?" *
+    - „S-a schimbat suma la vreo plată recurentă față de lunile anterioare?"
+    - „Există plăți către același partener luna asta care arată a duplicat?"
+  </Accordion>
+
+  <Accordion title="Profitabilitate pe etichetă sau partener">
+    - „Ce proiect (etichetă) a adus cei mai mulți bani trimestrul acesta?"
+    - „Care client e cel mai profitabil dacă iau în calcul și costurile alocate proiectului lui?" *
+    - „Care proiect are cel mai slab raport costuri/încasări?" *
+  </Accordion>
+
+  <Accordion title="Mai multe conturi, o singură imagine">
+    - „Care e poziția totală de cash chiar acum, pe toate conturile conectate?"
+    - „Care cont a avut cea mai multă activitate luna trecută?"
+    - „Dacă aș avea nevoie de 30.000 de lei mâine pentru salarii, ce cont sau conturi ar acoperi suma?"
+    - „Ce transferuri am făcut între conturile mele luna asta?"
+
+    <video
+      src="/videos/mcp/cash-payroll-ro.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      aria-label="Asistentul răspunde care conturi ar acoperi salariile de mâine"
+    />
+  </Accordion>
+
+  <Accordion title="Taxe și obligații">
+    - „Cât am plătit până acum anul acesta în taxe și contribuții?"
+    - „Am destul cash disponibil cât să acopăr următoarea plată de taxe la scadență?" *
+    - „Cum se compară povara fiscală din anul acesta cu cea de anul trecut, ca procent din venituri?"
+  </Accordion>
+
+  <Accordion title="Conexiuni bancare">
+    - „Este activă conexiunea cu ING? Când expiră consimțământul?"
+    - „Ce conturi sunt conectate și când a fost actualizat fiecare ultima dată?"
+  </Accordion>
+</AccordionGroup>
+
+## Cum arată un răspuns
+
+Fiecare răspuns spune ce perioadă acoperă și în ce monedă, ca să poți verifica
+ce a înțeles asistentul înainte să te bazezi pe cifre.
+
+<video
+  src="/videos/mcp/answer-taxes-ro.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Asistentul răspunde la o întrebare despre taxele și contribuțiile plătite anul acesta"
+/>
+
+## Filtrare și grupare
+
+Poți restrânge o întrebare după câte criterii vrei deodată, exact ca pe ecranul
+de cash flow: categorie, etichetă, bancă, cont, partener.
+
+Gruparea se face pe zi, săptămână sau lună, opțional cu încă o dimensiune:
+partener, categorie, etichetă, cont sau bancă. Când nu adaugi a doua dimensiune,
+fiecare perioadă îți arată și soldul inițial, transferurile, mișcările excluse
+și soldul final.

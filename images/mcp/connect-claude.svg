@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <rect width="1200" height="600" rx="16" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="4" stroke-dasharray="16 12"/>
+  <text x="600" y="270" text-anchor="middle" font-family="Inter, -apple-system, Helvetica, Arial, sans-serif" font-size="40" font-weight="600" fill="#52525b">GIF placeholder</text>
+  <text x="600" y="330" text-anchor="middle" font-family="Inter, -apple-system, Helvetica, Arial, sans-serif" font-size="26" fill="#71717a">Adding the ThinkOut connector in Claude, ending on the connected state</text>
+  <text x="600" y="380" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="22" fill="#a1a1aa">/images/mcp/connect-claude.svg</text>
+</svg>

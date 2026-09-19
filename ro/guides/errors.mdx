@@ -1,0 +1,64 @@
+---
+title: "Erori"
+description: "Un singur înveliș, coduri stabile și un id de cerere pentru suport."
+---
+
+Erorile folosesc coduri de status HTTP și un corp JSON cu un singur obiect `error`:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "invalid_parameter",
+    "message": "Parameter 'from' must be a date in YYYY-MM-DD format.",
+    "param": "from",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+| Câmp | Descriere |
+|---|---|
+| `type` | Clasa generală: `invalid_request`, `authentication`, `not_found`, `rate_limit`, `server`. |
+| `code` | Motiv stabil, citibil de mașină. Ramifică logica pe el, nu pe `message`. |
+| `message` | Explicație pentru oameni, în engleză. Formularea se poate schimba. |
+| `param` | Parametrul de query sau de cale vinovat, când există unul. |
+| `request_id` | Menționează-l când contactezi suportul. |
+
+## Coduri
+
+| Status | `type` | `code` |
+|---|---|---|
+| `400` | `invalid_request` | `invalid_parameter`, `invalid_cursor`, `limit_out_of_range`, `invalid_expand`, `as_of_in_future` |
+| `401` | `authentication` | `unauthorized` |
+| `403` | `authentication` | `forbidden` |
+| `404` | `not_found` | `resource_not_found` |
+| `422` | `invalid_request` | `too_many_groups`, `period_too_long` |
+| `429` | `rate_limit` | `rate_limited` |
+| `500` | `server` | `internal_error` |
+
+## Rapoarte care cer prea mult
+
+O cerere de raport poate fi validă și totuși să depășească ce are voie să calculeze un singur apel. Gruparea pe partener pe mai mulți ani produce `too_many_groups`; o perioadă mai lungă decât permite un raport produce `period_too_long`. Ambele mesaje numesc atât ce ar fi produs cererea, cât și plafonul, ca să o poți restrânge fără să ghicești:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "too_many_groups",
+    "message": "Grouping by counterparty over this period produces 4,182 groups. The maximum is 1,000. Narrow the period or the filters.",
+    "param": "group_by",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+Rapoartele nu sunt niciodată parțiale. O cerere fie întoarce un răspuns complet, fie eșuează.
+
+## Limite de rată
+
+Cererile sunt limitate per cheie API. Un răspuns `429` include antetul `Retry-After` cu numărul de secunde de așteptat. Așteaptă intervalul și reîncearcă. Paginarea cu `limit=500` este cel mai ieftin mod de a extrage intervale mari.
+
+## Id-uri necunoscute
+
+Cererea unui id care nu există în spațiul de lucru al cheii întoarce `404`, inclusiv pentru id-uri care există în alt spațiu de lucru. API-ul nu confirmă niciodată existența datelor pe care nu le poți citi.

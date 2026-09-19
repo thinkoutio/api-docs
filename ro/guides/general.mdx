@@ -1,0 +1,50 @@
+---
+title: "General"
+description: "URL-ul de bază, o cheie și cele două apeluri cu care încep majoritatea integrărilor."
+---
+
+## URL de bază
+
+```text
+https://api.thinkout.io/v1
+```
+
+Toate cererile folosesc HTTPS. Răspunsurile sunt JSON cu chei în `snake_case`.
+
+## Prima cerere
+
+<Steps>
+  <Step title="Creează o cheie API">
+    În ThinkOut deschide **Setări** și creează o cheie pentru spațiul de lucru pe care vrei să îl citești. Cheia este afișată o singură dată. Vezi [Autentificare](/ro/guides/authentication).
+  </Step>
+  <Step title="Listează conturile">
+    ```bash
+    curl https://api.thinkout.io/v1/accounts \
+      -H "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+  </Step>
+  <Step title="Parcurge tranzacțiile">
+    ```bash
+    curl "https://api.thinkout.io/v1/transactions?from=2026-01-01&to=2026-03-31&limit=100" \
+      -H "Authorization: Bearer $THINKOUT_API_KEY"
+    ```
+    Urmărește `next_cursor` până când `has_more` devine `false`. Vezi [Paginare](/ro/guides/pagination).
+  </Step>
+</Steps>
+
+## Resurse
+
+<CardGroup cols={2}>
+  <Card title="Bănci" icon="link" href="/ro/api-reference/banci/listeaza-conexiunile-bancare">
+    Conexiunile bancare, starea lor și când s-a sincronizat fiecare ultima oară.
+  </Card>
+  <Card title="Conturi" icon="building-columns" href="/ro/api-reference/conturi/listeaza-conturile">
+    Conturi manuale și conectate la bancă, cu soldul curent în moneda contului.
+  </Card>
+  <Card title="Tranzacții" icon="arrow-right-arrow-left" href="/ro/api-reference/tranzactii/listeaza-tranzactiile">
+    Fiecare mișcare, înregistrată sau în așteptare, pe fiecare cont, așa cum a consemnat-o contul.
+  </Card>
+  <Card title="Rapoarte" icon="chart-column" href="/ro/api-reference/rapoarte/sintetizeaza-tranzactiile">
+    Încasări, plăți și solduri pe perioade, calculate așa cum le calculează ecranul de cash flow.
+  </Card>
+</CardGroup>

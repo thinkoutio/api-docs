@@ -1,0 +1,101 @@
+---
+title: "Data model"
+description: "How money, dates, directions and references are represented."
+---
+
+## Money
+
+Amounts are decimal strings, never floats, and never minor units:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parse them with a decimal type. Every amount on an object is in that object's `currency`, an ISO 4217 code.
+
+Amounts on transactions and forecasts are **signed**: negative is money leaving the workspace, positive is money coming in. The sign is authoritative. The `direction` field, `"inflow"` or `"outflow"`, is derived from it, so the two can never disagree and you can group by direction without parsing. Summing `amount` over any set of transactions gives the net movement.
+
+## Dates
+
+Transactions and forecasts have a `date`, an ISO 8601 calendar date such as `"2026-09-03"`. There is no time component. Date filters are inclusive on both ends.
+
+Audit fields `created_at` and `updated_at` are UTC timestamps in RFC 3339 format.
+
+## Objects and references
+
+Every object has an `object` field naming its type and an `id`, a UUID string. Related objects come back as ids:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Ask for the objects themselves with `expand`, naming the relations you want, comma-separated. Each id is then replaced by the object it points at:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+Expansion goes one level deep, and an unsupported name is rejected with a `400`. On a transaction you can expand `account`, `category`, `counterparty` and `labels`. On an account, `bank`. On a forecast, `category`, `counterparty`, `labels` and `linked_transactions`.
+
+An account's `bank` is the id of the connection feeding it, `null` for accounts kept by hand:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+Going the other way, from a connection to its accounts, is a filter rather than an expansion: `/accounts?bank_id=<id>`.
+
+Nullable references are `null`, never omitted. Arrays are `[]` when empty.
+
+## Enumerations
+
+All enumerations are lowercase strings.
+
+| Field | Values |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `category.activity` | `operating`, `investing`, `financing` |
+| `forecast.status` | `planned`, `overdue`, `partial`, `realised` |
+| `recurrence.interval` | `day`, `week`, `month`, `year` |
+
+New values may be added in a minor release. Treat unknown values as opaque rather than failing.
+
+## What a transaction list contains
+
+`/transactions` is a statement of an account: one row per movement, and every movement is a row.
+
+A transfer between two of your own accounts is two movements, so it comes back as two rows, one on each account. Nothing marks them as a pair. A transaction someone excluded from cash flow inside ThinkOut still moved money, so it is still a row, and nothing marks that either.
+
+A list is therefore not a cash flow report. Summing one counts every transfer twice, and the API gives you no way to spot them. Figures that agree with what ThinkOut shows come from the summary endpoint instead.
+
+## Summaries
+
+`/transactions/summary` is the one place the API's numbers deliberately differ from a list's. It returns one row per period, and a `totals` block for the whole window so you never add rows yourself:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+The four balance fields appear only on rows grouped by period alone. Group by a second dimension, `group_by=counterparty` for instance, and they are `null`, because a balance per counterparty means nothing.
+
+What a summary counts is fixed. Transfers between your own accounts, movements a user excluded and duplicates are left out of the flows; transfers and excluded are reported as their own lines instead. A split payment is counted once, through its pieces. Amounts are converted to one currency at the rate of each movement's own date; balances convert whole at one rate, and the `conversion` object says which basis applied.
+
+A list cannot be filtered into agreeing with a summary, and is not meant to.

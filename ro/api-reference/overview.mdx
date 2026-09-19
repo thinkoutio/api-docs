@@ -1,0 +1,28 @@
+---
+title: "Prezentare API"
+description: "Convenții comune tuturor endpoint-urilor."
+---
+
+| | |
+|---|---|
+| URL de bază | `https://api.thinkout.io/v1` |
+| Autentificare | `Authorization: Bearer <cheie api>`, o cheie per spațiu de lucru |
+| Format | JSON, chei `snake_case`, UTF-8 |
+| Id-uri | șiruri UUID |
+| Sume | șiruri decimale cu semn plus un `currency` ISO 4217 |
+| Date | `YYYY-MM-DD`; momente în RFC 3339 UTC |
+| Liste | `{ object, data, has_more, next_cursor }`, `limit` până la 500 |
+| Erori | `{ error: { type, code, message, param, request_id } }` |
+| Rapoarte | `/transactions/summary` și `/balances` întorc totaluri calculate după regulile ecranului de cash flow |
+
+Paginile de endpoint sunt generate din specificația OpenAPI. Numele câmpurilor, valorile enumerărilor și exemplele rămân în engleză indiferent de limbă, pentru că așa le trimite și le primește API-ul.
+
+## Versionare
+
+Versiunea este în cale. În `v1` facem doar modificări aditive: câmpuri noi, valori noi de enumerare, filtre opționale noi, endpoint-uri noi. Eliminarea sau redenumirea unui câmp, schimbarea unui tip sau a sensului unui filtru existent ar fi livrate ca `v2`, cu `v1` menținut cel puțin douăsprezece luni.
+
+Ignoră câmpurile pe care nu le recunoști și tratează valorile necunoscute de enumerare ca opace.
+
+## Playground
+
+Fiecare pagină de endpoint are un playground. Introdu o cheie API în câmpul de autorizare pentru a rula cereri pe propriul spațiu de lucru. Cheile rămân doar în browserul tău.

@@ -1,0 +1,155 @@
+---
+title: "Examples"
+sidebarTitle: "Examples"
+description: "What you can ask the assistant, what an answer looks like, and how to narrow a question by category, label, bank or counterparty."
+---
+
+## Your first question to the assistant
+
+Once the connector is live, you can start with a question like:
+
+> What is my balance right now, and how did it move over the last six months?
+
+You should get a table with the figures, the period and the currency. If you
+have more than one workspace, mention in the question which one you want the
+answer for. If you don't, the assistant asks, and then remembers for the rest of
+the conversation.
+
+## What you can ask
+
+Questions can be written exactly the way you would say them out loud: "total
+inflows from the first of April until today", "total results for last semester",
+"results for this September against last September". Don't worry about
+mistyping a word — the assistant handles typos and missing diacritics.
+
+<Note>
+  Questions marked with a <strong>*</strong> are answered by the assistant
+  reasoning over ThinkOut's historical totals. For now they are not based on
+  ThinkOut forecasts or budgets — the assistant tells you which period and which
+  assumptions it used, and you can read them as a documented interpretation of
+  the past, not as a projection.
+</Note>
+
+<video
+  src="/videos/mcp/worst-cash-weeks.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="The assistant answering a question about the worst weeks of the year"
+/>
+
+<AccordionGroup>
+  <Accordion title="Balances and cash flow" defaultOpen>
+    - "What is my balance right now?" "And on 30 June?"
+    - "Inflows and outflows over the last six months, in total and month by month."
+    - "Monthly cash flow for last semester, only for the Banca Transilvania accounts."
+    - "Show me last month's net result from ING."
+    - "This September against last September."
+    - "Why did the balance drop in June?"
+
+    <video
+      src="/videos/mcp/balance-comparison.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      aria-label="The assistant answering a question about the current balance and how it moved"
+    />
+  </Accordion>
+
+  <Accordion title="Projected liquidity and cash risk">
+    - "At my current spending rate, how many months of cash do I have left?" *
+    - "What is my average daily balance this quarter compared with last quarter?"
+    - "What were the three worst weeks of the year in terms of cash?"
+  </Accordion>
+
+  <Accordion title="Client concentration and risk">
+    - "What percentage of my income comes from my top three clients?"
+    - "Which clients paid me less this year than last year?"
+    - "Which client relationship has grown the most year on year?"
+    - "How much did Client X pay us in the first half of the year?"
+  </Accordion>
+
+  <Accordion title="Payment behaviour, in both directions">
+    - "Which suppliers do I pay fastest, and which ones do I keep putting off?"
+    - "Is there a regular client who pays more slowly than they used to?"
+    - "When did X last pay us, and how often do they pay?"
+    - "Largest payments from the ING Bank accounts since January 2026."
+  </Accordion>
+
+  <Accordion title="Cost control and recurring spend">
+    - "Which supplier cost has grown the most against last year, in percentage terms?"
+    - "What is the most expensive tool subscription I am paying for?"
+    - "Top five suppliers this quarter."
+  </Accordion>
+
+  <Accordion title="Categories and uncategorised transactions">
+    - "Which transactions are still uncategorised? Show me the list, not just the total."
+    - "Which spending category grew the most as a share of total costs this year?"
+    - "How much have I spent on [label] in total since the project started?"
+  </Accordion>
+
+  <Accordion title="Anomalies and things worth a second look">
+    - "Were there transactions this month that are unusually large for my normal pattern?" *
+    - "Has the amount changed on any recurring payment compared with previous months?"
+    - "Are there payments to the same counterparty this month that look like duplicates?"
+  </Accordion>
+
+  <Accordion title="Profitability by label or counterparty">
+    - "Which project (label) brought in the most money this quarter?"
+    - "Which client is most profitable if I also count the costs allocated to their project?" *
+    - "Which project has the worst cost-to-income ratio?" *
+  </Accordion>
+
+  <Accordion title="Several accounts, one picture">
+    - "What is my total cash position right now, across every connected account?"
+    - "Which account saw the most activity last month?"
+    - "If I needed 30,000 lei tomorrow for payroll, which account or accounts would cover it?"
+    - "Which transfers did I make between my own accounts this month?"
+
+    <video
+      src="/videos/mcp/cash-payroll.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      aria-label="The assistant answering which accounts would cover tomorrow's payroll"
+    />
+  </Accordion>
+
+  <Accordion title="Taxes and obligations">
+    - "How much have I paid so far this year in taxes and contributions?"
+    - "Do I have enough cash available to cover the next tax payment when it falls due?" *
+    - "How does this year's tax burden compare with last year's, as a percentage of income?"
+  </Accordion>
+
+  <Accordion title="Bank connections">
+    - "Is the ING connection active? When does its consent expire?"
+    - "Which accounts are connected, and when was each last updated?"
+  </Accordion>
+</AccordionGroup>
+
+## What an answer looks like
+
+Every answer states the period it covers and the currency, so you can check what
+the assistant understood before you rely on the figures.
+
+<video
+  src="/videos/mcp/answer-taxes.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="The assistant answering a question about taxes and contributions paid this year"
+/>
+
+## Filtering and grouping
+
+You can narrow a question by as many criteria as you like at once, just as on
+the cash flow screen: category, label, bank, account, counterparty.
+
+Grouping works by day, week or month, optionally with one further dimension:
+counterparty, category, label, account or bank. When you do not add a second
+dimension, each period also shows its starting balance, transfers, excluded
+movements and ending balance.

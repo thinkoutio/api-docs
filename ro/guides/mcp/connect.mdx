@@ -1,0 +1,127 @@
+---
+title: "Conectare"
+sidebarTitle: "Conectare"
+description: "Conectează-ți contul ThinkOut la Claude, ChatGPT, Claude Code, Codex sau Gemini."
+---
+
+Te autentifici cu contul tău ThinkOut, același pe care îl folosești în
+aplicație, iar asistentul vede doar spațiile de lucru la care i-ai dat acces.
+Clienții care nu se pot autentifica pot trimite în schimb o
+[cheie MCP](#cheie-mcp).
+
+## Claude
+
+<Steps>
+  <Step title="Deschide setările pentru conectori">
+    În Claude, mergi la **Customize** → **Connectors** → **Add custom connector**.
+  </Step>
+  <Step title="Adaugă serverul">
+    Denumește-l `ThinkOut` și pune adresa `https://mcp.thinkout.io`
+  </Step>
+  <Step title="Autentifică-te">
+    Activează sign-in, salvează și autorizează cu contul tău ThinkOut.
+  </Step>
+</Steps>
+
+{/* TODO: GIF — cei trei pași de mai sus, până la starea „conectat”. */}
+<Frame>
+  <img src="/images/mcp/connect-claude.svg" alt="Adăugarea conectorului ThinkOut în setările Claude" />
+</Frame>
+
+## Claude Code
+
+Deschide terminalul și scrie:
+
+```bash
+claude mcp add --transport http thinkout https://mcp.thinkout.io
+```
+
+Apoi rulează `/mcp` și finalizează autentificarea în browser.
+
+## Codex
+
+Deschide terminalul și scrie:
+
+```bash
+codex mcp add thinkout --url https://mcp.thinkout.io
+codex mcp login thinkout
+```
+
+## Gemini CLI
+
+Adaugă serverul în `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "thinkout": {
+      "httpUrl": "https://mcp.thinkout.io"
+    }
+  }
+}
+```
+
+Apoi rulează `/mcp auth thinkout`.
+
+<Note>
+  Pe Gemini Enterprise, administratorul trebuie să ceară mai întâi credențiale
+  de client de la echipa ThinkOut.
+</Note>
+
+## ChatGPT
+
+<Steps>
+  <Step title="Activează developer mode">
+    În **Settings**, activează developer mode.
+  </Step>
+  <Step title="Creează conectorul">
+    Adaugă un conector către `https://mcp.thinkout.io`
+  </Step>
+  <Step title="Autentifică-te">
+    Finalizează autentificarea ThinkOut când ți se cere.
+  </Step>
+</Steps>
+
+{/* TODO: GIF — conectarea în ChatGPT. */}
+<Frame>
+  <img src="/images/mcp/connect-chatgpt.svg" alt="Adăugarea conectorului ThinkOut în ChatGPT, în developer mode" />
+</Frame>
+
+## Alți clienți
+
+Orice client compatibil MCP care suportă Streamable HTTP se poate conecta la
+adresa `https://mcp.thinkout.io`, fie prin autentificare, fie trimițând o cheie
+MCP ca bearer token.
+
+## Cheie MCP
+
+Unii clienți nu pot parcurge autentificarea interactivă. Aceștia se pot
+autentifica direct: creează o cheie MCP în ThinkOut, din **Contul meu**, și
+trimite-o în antetul `Authorization`.
+
+```bash
+claude mcp add --transport http thinkout https://mcp.thinkout.io \
+  --header "Authorization: Bearer $THINKOUT_MCP_KEY"
+```
+
+Într-un client care are propriul fișier de configurare:
+
+```json
+{
+  "mcpServers": {
+    "thinkout": {
+      "httpUrl": "https://mcp.thinkout.io",
+      "headers": {
+        "Authorization": "Bearer <cheia ta>"
+      }
+    }
+  }
+}
+```
+
+<Note>
+  O cheie MCP aparține contului, nu unei persoane, așa că ajunge la toate
+  spațiile de lucru din cont, nu doar la cele pe care le poți deschide tu.
+  Funcționează până când o regenerezi sau o revoci. Acolo unde clientul
+  permite, autentifică-te în locul ei.
+</Note>
