@@ -1,0 +1,34 @@
+---
+title: "Prezentare API"
+description: "Convenții comune tuturor endpoint-urilor."
+---
+
+| | |
+|---|---|
+| URL de bază | `https://api.thinkout.io/v1` |
+| [Autentificare](/ro/guides/authentication) | `Authorization: Bearer <cheie api>`, o cheie per spațiu de lucru |
+| Format | JSON, chei `snake_case`, UTF-8 |
+| Id-uri | șiruri UUID |
+| [Sume](/ro/guides/data-model#sume) | șiruri decimale cu semn și două decimale, plus un `currency` ISO 4217 |
+| [Date](/ro/guides/data-model#date) | `YYYY-MM-DD`; momente în RFC 3339 UTC |
+| [Liste](/ro/guides/pagination) | `{ object, data, has_more, next_cursor }`, `limit` până la 500 |
+| [Erori](/ro/guides/errors) | `{ error: { type, code, message, param, request_id } }` |
+| [Limită de rată](/ro/guides/errors#limite-de-rată) | 120 de cereri pe minut per cheie; antete `X-RateLimit-*` pe fiecare răspuns |
+| [Rapoarte](/ro/guides/data-model#liste-și-sinteze) | `/transactions/summary` și `/balances` întorc totaluri calculate după regulile ecranului de cash flow |
+
+Paginile de endpoint sunt generate din specificația OpenAPI. Numele
+câmpurilor, valorile enumerărilor și exemplele rămân în engleză, pentru că așa
+le trimite și le primește API-ul.
+
+## Versionare
+
+Versiunea este în cale. În `v1` modificările sunt doar aditive: câmpuri noi,
+valori noi de enumerare, filtre opționale noi, endpoint-uri noi. Orice altceva
+este livrat ca `v2`. Ignoră câmpurile necunoscute și tratează valorile
+necunoscute de enumerare ca opace.
+
+## Playground
+
+Fiecare pagină de endpoint are un playground. Introdu o cheie API în câmpul de
+autorizare pentru a rula cereri pe propriul spațiu de lucru. Cheile rămân în
+browserul tău.

@@ -1,0 +1,46 @@
+---
+title: "Authentication"
+description: "API keys are bound to one workspace and sent as a bearer token."
+---
+
+Every request carries an API key in the `Authorization` header:
+
+```bash
+curl https://api.thinkout.io/v1/accounts \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Keys and workspaces
+
+A key belongs to exactly one workspace. There is no workspace parameter in
+the URL: the key decides which workspace you read. To read several
+workspaces, create one key per workspace.
+
+Owners and managers create the key in ThinkOut under **Settings** →
+**Workspace**, where they can read it again at any time. Store it in a secrets
+manager, never in client-side code or a public repository.
+
+## Permissions
+
+A key reads everything in its workspace and writes nothing. There are no
+scopes to choose.
+
+## Regeneration and revocation
+
+A workspace holds one key at a time. Regenerating it from the same card issues
+a new key and the old one stops working at once, so update your integration
+in the same step. Revoking leaves the workspace with no key.
+
+<Note>
+  Either action is immediate: the next request with the old key returns
+  `401`. Owners and managers on the account receive an email each time.
+</Note>
+
+## Failure responses
+
+| Status | `error.code` | Meaning |
+|---|---|---|
+| `401` | `unauthorized` | The header is missing, malformed, or the key is unknown or revoked. |
+| `403` | `forbidden` | The key is valid but the company's ThinkOut plan does not include the API. |
+
+See [Errors](/guides/errors) for the envelope.

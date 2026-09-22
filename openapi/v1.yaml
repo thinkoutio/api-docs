@@ -1,0 +1,2011 @@
+openapi: 3.1.0
+info:
+  title: ThinkOut API
+  version: "1.0"
+  description: |
+    Read access to the data of a ThinkOut workspace.
+
+    Every endpoint in version 1 is a `GET`. Lists share one envelope and page with a cursor
+    wherever they can grow. Every response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`
+    and `X-RateLimit-Reset`.
+
+    Version 1 changes additively: new endpoints, optional parameters, response fields and enum
+    values can appear at any time. Tolerate unknown fields and never treat an enum as closed.
+  contact:
+    name: ThinkOut developer support
+    url: https://developers.thinkout.io/guides/support
+servers:
+  - url: https://api.thinkout.io/v1
+security:
+  - apiKey: []
+tags:
+  - name: Banks
+    description: The workspace's bank connections and the state of each one.
+  - name: Accounts
+    description: Manual, bank-synced and delegated accounts with computed balances.
+  - name: Transactions
+    description: Booked and pending movements on the workspace's accounts.
+  - name: Categories
+    description: The workspace category tree, split by direction and business activity.
+  - name: Counterparties
+    description: Customers and suppliers that transactions and forecasts are attributed to.
+  - name: Labels
+    description: Free-form tags grouped by label type.
+  - name: Forecasts
+    description: Planned inflows and outflows and the transactions that realised them.
+  - name: Reports
+    description: Totals rather than rows. Summaries over transactions and forecasts, and balances per account.
+
+paths:
+  /banks:
+    get:
+      tags: [Banks]
+      operationId: listBanks
+      summary: List bank connections
+      description: |
+        Bank connections ordered by `name`, then `id`. One connection is one authorisation with
+        one bank and can feed several accounts.
+
+        Only this workspace's connections are listed. A `delegated` account's `bank` points at
+        another workspace's connection, which is not readable here. Manual accounts have no
+        connection.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/BankStatus"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of bank connections.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Bank"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /banks/{id}:
+    get:
+      tags: [Banks]
+      operationId: getBank
+      summary: Get a bank connection
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: The bank connection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bank"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /accounts:
+    get:
+      tags: [Accounts]
+      operationId: listAccounts
+      summary: List accounts
+      description: |
+        Returns accounts in the workspace, ordered by `name`, then `id`.
+
+        Balances are as of today in UTC. For another day use `GET /accounts/{id}` with `as_of`,
+        or `GET /balances` for every account at once.
+      parameters:
+        - name: bank_id
+          in: query
+          description: Only accounts fed by these bank connections. Comma-separated for several.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - $ref: "#/components/parameters/account_expand"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of accounts.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /accounts/{id}:
+    get:
+      tags: [Accounts]
+      operationId: getAccount
+      summary: Get an account
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/as_of"
+        - $ref: "#/components/parameters/account_expand"
+      responses:
+        "200":
+          description: The account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      operationId: listTransactions
+      summary: List transactions
+      description: Transactions ordered by `date` descending, then `id`.
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/bank_id"
+        - $ref: "#/components/parameters/account_id"
+        - $ref: "#/components/parameters/category_id"
+        - $ref: "#/components/parameters/label_id"
+        - $ref: "#/components/parameters/counterparty_id"
+        - $ref: "#/components/parameters/direction"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionStatus"
+        - $ref: "#/components/parameters/transaction_expand"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of transactions.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      operationId: getTransaction
+      summary: Get a transaction
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/transaction_expand"
+      responses:
+        "200":
+          description: The transaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /categories:
+    get:
+      tags: [Categories]
+      operationId: listCategories
+      summary: List categories
+      description: |
+        The category tree flattened in ThinkOut's display order: inflows, then outflows; within
+        each, every category followed by its subcategories, siblings by `position`. `direction`
+        narrows to one side.
+
+        Rebuild the hierarchy with `parent_id`.
+      parameters:
+        - $ref: "#/components/parameters/direction"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of categories.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Category"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /categories/{id}:
+    get:
+      tags: [Categories]
+      operationId: getCategory
+      summary: Get a category
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: The category.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /counterparties:
+    get:
+      tags: [Counterparties]
+      operationId: listCounterparties
+      summary: List counterparties
+      description: Counterparties ordered by `name`, then `id`.
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of counterparties.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Counterparty"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /counterparties/{id}:
+    get:
+      tags: [Counterparties]
+      operationId: getCounterparty
+      summary: Get a counterparty
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: The counterparty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Counterparty"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /labels:
+    get:
+      tags: [Labels]
+      operationId: listLabels
+      summary: List labels
+      description: Labels ordered by `name`, then `id`. There are no filters; each label carries its type.
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of labels.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Label"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /labels/{id}:
+    get:
+      tags: [Labels]
+      operationId: getLabel
+      summary: Get a label
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: The label.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Label"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /forecasts:
+    get:
+      tags: [Forecasts]
+      operationId: listForecasts
+      summary: List forecasts
+      description: Dated forecasts ordered by `date` descending, then `id`. Forecasts without a date are not exposed.
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/category_id"
+        - $ref: "#/components/parameters/label_id"
+        - $ref: "#/components/parameters/counterparty_id"
+        - $ref: "#/components/parameters/direction"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ForecastStatus"
+        - $ref: "#/components/parameters/forecast_expand"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: A page of forecasts.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/List"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Forecast"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /forecasts/{id}:
+    get:
+      tags: [Forecasts]
+      operationId: getForecast
+      summary: Get a forecast
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/forecast_expand"
+      responses:
+        "200":
+          description: The forecast.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Forecast"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /transactions/summary:
+    get:
+      tags: [Reports]
+      operationId: summariseTransactions
+      summary: Summarise transactions
+      description: |
+        Totals over the transactions `/transactions` lists, with the same filters, per period
+        bucket and at most one more dimension.
+
+        The counting rules are fixed so the figures match ThinkOut: transfers between the
+        workspace's own accounts and transactions the user excluded are left out, and split
+        transactions count through their pieces. `/transactions` lists every movement, so
+        summing it gives a different figure.
+
+        Amounts convert to `currency` at the rate of each transaction's own date. Buckets are
+        calendar aligned and clipped to the window. `totals` covers the whole window.
+
+        Rows grouped by period alone also carry the period's starting balance, transfers,
+        excluded movements and final balance. Those four are `null` when `group_by` or
+        `direction` is given.
+
+        Grouped rows are ordered by absolute `net`, largest first. A period keeps at most 50
+        groups; the rest fold into one row labelled `other`. Transactions with no counterparty
+        or no label fall in a `none` row, and a transaction with several labels counts once per
+        label. Here `category_id` also covers subcategories.
+
+        Filters combine with AND; a filter that takes a list combines its values with OR.
+
+        **Inflows and outflows per month, with balances**
+
+        ```http
+        GET /transactions/summary?from=2026-03-01&to=2026-04-30&interval=month
+        ```
+
+        **Outflows per counterparty per month**
+
+        ```http
+        GET /transactions/summary?from=2026-07-01&to=2026-08-31&interval=month&group_by=counterparty&direction=outflow
+        ```
+
+        **Cash flow per month for one bank's accounts**
+
+        ```http
+        GET /transactions/summary?from=2026-03-01&to=2026-08-31&interval=month&bank_id=5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        ```
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: First day of the window, inclusive.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          description: Last day of the window, inclusive.
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/interval"
+        - name: group_by
+          in: query
+          description: A second dimension to group by, alongside the period bucket. Omit it for one row per period.
+          schema:
+            $ref: "#/components/schemas/GroupDimension"
+        - $ref: "#/components/parameters/currency"
+        - $ref: "#/components/parameters/bank_id"
+        - $ref: "#/components/parameters/account_id"
+        - $ref: "#/components/parameters/category_id"
+        - $ref: "#/components/parameters/label_id"
+        - $ref: "#/components/parameters/counterparty_id"
+        - $ref: "#/components/parameters/direction"
+        - $ref: "#/components/parameters/activity"
+      responses:
+        "200":
+          description: The summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Summary"
+              examples:
+                "By month, with balances":
+                  summary: One row per month, balance fields present
+                  value:
+                    object: summary
+                    period:
+                      from: "2026-03-01"
+                      to: "2026-04-30"
+                      macro: null
+                      interval: month
+                    conversion:
+                      applied: true
+                      currency: RON
+                      basis: transaction_date
+                    group_by: null
+                    has_data: true
+                    totals:
+                      currency: RON
+                      inflow: "163900.00"
+                      outflow: "-118420.75"
+                      net: "45479.25"
+                      count: 401
+                    data:
+                      - period_start: "2026-03-01"
+                        period_end: "2026-03-31"
+                        group: null
+                        currency: RON
+                        inflow: "84200.00"
+                        outflow: "-61350.25"
+                        net: "22849.75"
+                        count: 212
+                        starting_balance: "128400.10"
+                        transfers: "0.00"
+                        excluded: "-1500.00"
+                        final_balance: "149749.85"
+                      - period_start: "2026-04-01"
+                        period_end: "2026-04-30"
+                        group: null
+                        currency: RON
+                        inflow: "79700.00"
+                        outflow: "-57070.50"
+                        net: "22629.50"
+                        count: 189
+                        starting_balance: "149749.85"
+                        transfers: "0.00"
+                        excluded: "0.00"
+                        final_balance: "172379.35"
+                "By month and counterparty":
+                  summary: One row per month per counterparty, balance fields null
+                  value:
+                    object: summary
+                    period:
+                      from: "2026-07-01"
+                      to: "2026-08-31"
+                      macro: null
+                      interval: month
+                    conversion:
+                      applied: true
+                      currency: RON
+                      basis: transaction_date
+                    group_by: counterparty
+                    has_data: true
+                    totals:
+                      currency: RON
+                      inflow: "0.00"
+                      outflow: "-42461.00"
+                      net: "-42461.00"
+                      count: 9
+                    data:
+                      - period_start: "2026-07-01"
+                        period_end: "2026-07-31"
+                        group:
+                          dimension: counterparty
+                          id: 4d5e6f70-8192-4a3b-9c4d-5e6f7a8b9c0d
+                          label: Regus
+                        currency: RON
+                        inflow: "0.00"
+                        outflow: "-12000.00"
+                        net: "-12000.00"
+                        count: 1
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: "2026-07-01"
+                        period_end: "2026-07-31"
+                        group:
+                          dimension: counterparty
+                          id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+                          label: Orange Romania
+                        currency: RON
+                        inflow: "0.00"
+                        outflow: "-6115.50"
+                        net: "-6115.50"
+                        count: 2
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: "2026-08-01"
+                        period_end: "2026-08-31"
+                        group:
+                          dimension: counterparty
+                          id: 4d5e6f70-8192-4a3b-9c4d-5e6f7a8b9c0d
+                          label: Regus
+                        currency: RON
+                        inflow: "0.00"
+                        outflow: "-18230.00"
+                        net: "-18230.00"
+                        count: 4
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+                      - period_start: "2026-08-01"
+                        period_end: "2026-08-31"
+                        group:
+                          dimension: counterparty
+                          id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+                          label: Orange Romania
+                        currency: RON
+                        inflow: "0.00"
+                        outflow: "-6115.50"
+                        net: "-6115.50"
+                        count: 2
+                        starting_balance: null
+                        transfers: null
+                        excluded: null
+                        final_balance: null
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/RequestTooLarge"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /forecasts/summary:
+    get:
+      tags: [Reports]
+      operationId: summariseForecasts
+      summary: Summarise forecasts
+      description: |
+        Totals over dated forecasts per period bucket and at most one more dimension. Give
+        `period`, or both `from` and `to`.
+
+        `amount` totals what was planned and `remaining_amount` the part not yet matched by
+        transactions. Amounts convert to `currency` at the rate of each forecast's own date.
+        Buckets are calendar aligned and clipped to the window.
+
+        Grouped rows are ordered by absolute `amount`, largest first, with no cap per period.
+        Forecasts with no counterparty or no label fall in a `None` row, and a forecast with
+        several labels counts once per label.
+      parameters:
+        - $ref: "#/components/parameters/period"
+        - name: from
+          in: query
+          description: First day of the window, inclusive. Required with `to` unless `period` is given.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Last day of the window, inclusive. Required with `from` unless `period` is given.
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/interval"
+        - name: group_by
+          in: query
+          description: A second dimension to group by, alongside the period bucket. Omit it for one row per period.
+          schema:
+            $ref: "#/components/schemas/ForecastGroupDimension"
+        - $ref: "#/components/parameters/currency"
+        - $ref: "#/components/parameters/category_id"
+        - $ref: "#/components/parameters/label_id"
+        - $ref: "#/components/parameters/counterparty_id"
+        - $ref: "#/components/parameters/direction"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ForecastStatus"
+      responses:
+        "200":
+          description: The summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForecastSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/RequestTooLarge"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /balances:
+    get:
+      tags: [Reports]
+      operationId: getBalances
+      summary: Get balances
+      description: |
+        Every account's balance and their total at the end of `as_of`, accounts ordered by
+        `name`.
+
+        A balance is the opening balance plus the account's transactions up to that day, so
+        `as_of` cannot be in the future. Each balance converts whole at the rate for `as_of`,
+        unlike a summary, which converts each movement at its own date.
+      parameters:
+        - $ref: "#/components/parameters/as_of"
+        - $ref: "#/components/parameters/currency"
+      responses:
+        "200":
+          description: Balances per account and in total.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Balances"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: A workspace API key created in ThinkOut settings. One key reads one workspace.
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    from:
+      name: from
+      in: query
+      description: Earliest `date` to include, inclusive.
+      schema:
+        type: string
+        format: date
+    to:
+      name: to
+      in: query
+      description: Latest `date` to include, inclusive.
+      schema:
+        type: string
+        format: date
+    direction:
+      name: direction
+      in: query
+      schema:
+        $ref: "#/components/schemas/Direction"
+    activity:
+      name: activity
+      in: query
+      description: Only rows whose category sits in these cash flow statement sections. Comma-separated for several.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/Activity"
+    bank_id:
+      name: bank_id
+      in: query
+      description: Only rows on the accounts fed by these bank connections. Comma-separated for several.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    account_id:
+      name: account_id
+      in: query
+      description: Only rows on these accounts. Comma-separated for several.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    category_id:
+      name: category_id
+      in: query
+      description: |
+        Only rows in these categories. Comma-separated for several. On `/transactions` this
+        also matches a split transaction whose pieces are in one of them. Subcategories are
+        included only on `/transactions/summary`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    label_id:
+      name: label_id
+      in: query
+      description: Only rows carrying at least one of these labels. Comma-separated for several.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    counterparty_id:
+      name: counterparty_id
+      in: query
+      description: Only rows attributed to these counterparties. Comma-separated for several.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    transaction_expand:
+      name: expand
+      in: query
+      description: Relations to return as objects instead of ids. Comma-separated. Expansion goes one level deep; an unknown name is rejected with `invalid_expand`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [account, category, counterparty, labels]
+      example: category,counterparty
+    account_expand:
+      name: expand
+      in: query
+      description: Relations to return as objects instead of ids. Comma-separated. Expansion goes one level deep; an unknown name is rejected with `invalid_expand`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [bank]
+      example: bank
+    forecast_expand:
+      name: expand
+      in: query
+      description: Relations to return as objects instead of ids. Comma-separated. Expansion goes one level deep; an unknown name is rejected with `invalid_expand`.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [category, counterparty, labels, linked_transactions]
+      example: category,linked_transactions
+    as_of:
+      name: as_of
+      in: query
+      description: |
+        Compute balances at the end of this day. Defaults to today: the UTC day on
+        `/accounts/{id}`, the workspace's local day on `/balances`. A future date is rejected
+        with `as_of_in_future`.
+      schema:
+        type: string
+        format: date
+    period:
+      name: period
+      in: query
+      description: A named window, resolved against the workspace's local day and echoed in the response. Takes precedence over `from` and `to`.
+      schema:
+        $ref: "#/components/schemas/PeriodMacro"
+    interval:
+      name: interval
+      in: query
+      description: The period bucket rows are grouped into.
+      schema:
+        $ref: "#/components/schemas/Interval"
+    currency:
+      name: currency
+      in: query
+      description: Currency to report in. Defaults to the workspace currency. An unknown code is rejected.
+      schema:
+        $ref: "#/components/schemas/Currency"
+    limit:
+      name: limit
+      in: query
+      description: Page size. Outside the range it is rejected with `limit_out_of_range`.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+    cursor:
+      name: cursor
+      in: query
+      description: Opaque token from the previous page's `next_cursor`. Keep the other parameters unchanged between pages.
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: A parameter is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: invalid_request
+              code: invalid_parameter
+              message: "direction must be 'inflow' or 'outflow'"
+              param: direction
+              request_id: "0HNF8K3QJL2VM:00000001"
+    Unauthorized:
+      description: The API key is missing, malformed, unknown or revoked.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: authentication
+              code: unauthorized
+              message: "Missing, malformed, unknown or revoked API key"
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+    Forbidden:
+      description: The key is valid but the company's ThinkOut plan does not include the API.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: authentication
+              code: forbidden
+              message: "The API is not included in this company's ThinkOut plan. Contact support@thinkout.io to enable it."
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+    NotFound:
+      description: No object with this id exists in the key's workspace.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: not_found
+              code: resource_not_found
+              message: "Transaction not found"
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+    RequestTooLarge:
+      description: |
+        The report would exceed 1000 rows. `period_too_long` is raised from the window and
+        interval alone, `too_many_groups` after grouping. Narrow the window, coarsen the
+        interval or add filters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: invalid_request
+              code: too_many_groups
+              message: "Grouping by counterparty over this period produces 1240 groups. The maximum is 1000. Narrow the period or the filters."
+              param: group_by
+              request_id: "0HNF8K3QJL2VM:00000001"
+    RateLimited:
+      description: More than 120 requests in the current minute for this key. Wait for the seconds in `Retry-After`.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the minute window resets.
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Requests allowed per minute.
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests left in the current minute.
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Seconds until the minute window resets.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              type: rate_limit
+              code: rate_limited
+              message: "Too many requests"
+              param: null
+              request_id: "0HNF8K3QJL2VM:00000001"
+
+  schemas:
+    Money:
+      type: string
+      description: Decimal amount as a string with two decimals. Negative means an outflow on transactions, forecasts and report figures.
+      pattern: "^-?[0-9]+\\.[0-9]{2}$"
+      example: "-1250.00"
+
+    Currency:
+      type: string
+      description: ISO 4217 alphabetic currency code.
+      pattern: "^[A-Z]{3}$"
+      example: RON
+
+    Direction:
+      type: string
+      description: Whether money comes in or goes out. On a transaction or forecast it follows the sign of `amount`.
+      enum: [inflow, outflow]
+
+    Activity:
+      type: string
+      description: Cash flow statement section the category belongs to.
+      enum: [operating, investing, financing]
+
+    TransactionStatus:
+      type: string
+      description: "`pending` transactions come from a bank and are not yet booked. Their amount can change when they book, so upsert by `id`."
+      enum: [booked, pending]
+
+    TransactionSource:
+      type: string
+      description: How the transaction entered ThinkOut.
+      enum: [manual, import, bank]
+
+    AccountSource:
+      type: string
+      description: "`delegated` accounts are bank accounts another workspace has delegated to this one."
+      enum: [manual, bank, delegated]
+
+    ForecastStatus:
+      type: string
+      description: "`realised` is complete. `partial` has matched transactions. `overdue` is dated before today with none. `planned` is dated today or later with none."
+      enum: [planned, overdue, partial, realised]
+
+    RecurrenceInterval:
+      type: string
+      enum: [day, week, month, year]
+
+    Interval:
+      type: string
+      description: A period bucket for report rows.
+      enum: [day, week, month]
+      default: month
+
+    PeriodMacro:
+      type: string
+      description: A named window resolved on the server. `last_30_days` and `last_90_days` end today and include it; `last_12_months` starts the day after today minus twelve months.
+      enum:
+        - this_month
+        - last_month
+        - this_quarter
+        - last_quarter
+        - this_year
+        - last_year
+        - month_to_date
+        - quarter_to_date
+        - year_to_date
+        - last_30_days
+        - last_90_days
+        - last_12_months
+
+    GroupDimension:
+      type: string
+      description: A dimension to group report rows by, alongside the period bucket.
+      enum: [category, counterparty, label, account, activity, direction]
+
+    ForecastGroupDimension:
+      type: string
+      description: As `GroupDimension`, plus forecast status. Forecasts have no account.
+      enum: [category, counterparty, label, activity, direction, status]
+
+    List:
+      type: object
+      required: [object, data, has_more, next_cursor]
+      properties:
+        object:
+          type: string
+          const: list
+        data:
+          type: array
+          items: {}
+        has_more:
+          type: boolean
+          description: Whether another page exists.
+        next_cursor:
+          type: [string, "null"]
+          description: Pass as `cursor` to fetch the next page. `null` on the last page.
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [type, code, message, param, request_id]
+          properties:
+            type:
+              type: string
+              enum: [invalid_request, authentication, not_found, rate_limit, server]
+            code:
+              type: string
+              description: |
+                Stable machine-readable reason. Branch on this, not on `message`. One of
+                `invalid_parameter`, `invalid_cursor`, `limit_out_of_range`, `invalid_expand`,
+                `as_of_in_future`, `unauthorized`, `forbidden`, `resource_not_found`,
+                `too_many_groups`, `period_too_long`, `rate_limited`, `internal_error`.
+            message:
+              type: string
+              description: Human-readable explanation. Wording may change.
+            param:
+              type: [string, "null"]
+              description: The query parameter at fault, when there is one.
+            request_id:
+              type: string
+              description: Quote this when contacting support.
+
+    ResolvedPeriod:
+      type: object
+      description: The window actually computed.
+      required: [from, to, macro, interval]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        macro:
+          oneOf:
+            - $ref: "#/components/schemas/PeriodMacro"
+            - type: "null"
+          description: The macro that produced these dates, or `null` when they were given directly.
+        interval:
+          $ref: "#/components/schemas/Interval"
+
+    Conversion:
+      type: object
+      description: What was done to make amounts comparable.
+      required: [applied, currency, basis]
+      properties:
+        applied:
+          type: boolean
+          description: "`false` when every amount was already in `currency`."
+        currency:
+          $ref: "#/components/schemas/Currency"
+        basis:
+          type: string
+          description: "`transaction_date` converts each movement at the rate for its own date. `balance_date` converts a whole balance at one rate. `none` when nothing was converted."
+          enum: [transaction_date, balance_date, none]
+
+    ReportGroup:
+      type: object
+      description: What a report row is grouped by. `null` on rows grouped by period alone.
+      required: [dimension, id, label]
+      properties:
+        dimension:
+          type: string
+          example: category
+        id:
+          type: [string, "null"]
+          format: uuid
+          description: The grouped object's id. `null` for `activity`, `direction` and `status`, and for the `none` and `other` rows.
+        label:
+          type: string
+          description: "Name of the group. Non-object groups are lowercase codes on `/transactions/summary` (`inflow`, `operating`, `none`, `other`) and capitalised names on `/forecasts/summary` (`Inflow`, `Planned`, `None`, the activity's display name)."
+          example: Telecom
+
+    SummaryTotals:
+      type: object
+      description: The whole window added up, after the same exclusions as the rows.
+      required: [currency, inflow, outflow, net, count]
+      properties:
+        currency:
+          $ref: "#/components/schemas/Currency"
+        inflow:
+          $ref: "#/components/schemas/Money"
+        outflow:
+          $ref: "#/components/schemas/Money"
+        net:
+          $ref: "#/components/schemas/Money"
+        count:
+          type: integer
+
+    SummaryRow:
+      type: object
+      required:
+        - period_start
+        - period_end
+        - group
+        - currency
+        - inflow
+        - outflow
+        - net
+        - count
+        - starting_balance
+        - transfers
+        - excluded
+        - final_balance
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        group:
+          oneOf:
+            - $ref: "#/components/schemas/ReportGroup"
+            - type: "null"
+        currency:
+          $ref: "#/components/schemas/Currency"
+        inflow:
+          $ref: "#/components/schemas/Money"
+        outflow:
+          $ref: "#/components/schemas/Money"
+        net:
+          $ref: "#/components/schemas/Money"
+        count:
+          type: integer
+          description: Transactions behind this row, after the report's exclusions.
+        starting_balance:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+          description: Balance of the accounts in scope at the start of the period. `null` when `group_by` or `direction` is given.
+        transfers:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+          description: Net of transfers between the workspace's own accounts in the period. Not part of the flows. `null` when `group_by` or `direction` is given.
+        excluded:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+          description: Net of movements the user excluded from cash flow in the period. Not part of the flows. `null` when `group_by` or `direction` is given.
+        final_balance:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+          description: Balance at the end of the period. Starting balance plus `net`, `transfers`, `excluded` and the opening balances of accounts opened in the period. `null` when `group_by` or `direction` is given.
+
+    Summary:
+      type: object
+      required: [object, period, conversion, group_by, has_data, totals, data]
+      properties:
+        object:
+          type: string
+          const: summary
+        period:
+          $ref: "#/components/schemas/ResolvedPeriod"
+        conversion:
+          $ref: "#/components/schemas/Conversion"
+        group_by:
+          oneOf:
+            - $ref: "#/components/schemas/GroupDimension"
+            - type: "null"
+        has_data:
+          type: boolean
+          description: "`false` when no transaction matched, as opposed to totals that came to zero."
+        totals:
+          $ref: "#/components/schemas/SummaryTotals"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SummaryRow"
+
+    ForecastSummaryRow:
+      type: object
+      required: [period_start, period_end, group, currency, amount, remaining_amount, count]
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        group:
+          oneOf:
+            - $ref: "#/components/schemas/ReportGroup"
+            - type: "null"
+        currency:
+          $ref: "#/components/schemas/Currency"
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: Total planned.
+        remaining_amount:
+          $ref: "#/components/schemas/Money"
+          description: Total not yet matched by transactions.
+        count:
+          type: integer
+
+    ForecastSummary:
+      type: object
+      required: [object, period, conversion, group_by, has_data, data]
+      properties:
+        object:
+          type: string
+          const: forecast_summary
+        period:
+          $ref: "#/components/schemas/ResolvedPeriod"
+        conversion:
+          $ref: "#/components/schemas/Conversion"
+        group_by:
+          oneOf:
+            - $ref: "#/components/schemas/ForecastGroupDimension"
+            - type: "null"
+        has_data:
+          type: boolean
+          description: "`false` when no forecast matched."
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForecastSummaryRow"
+
+    AccountBalance:
+      type: object
+      required: [account_id, name, native_currency, native_balance, balance]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ING Curent
+        native_currency:
+          $ref: "#/components/schemas/Currency"
+        native_balance:
+          $ref: "#/components/schemas/Money"
+          description: The balance in the account's own currency, unconverted.
+        balance:
+          $ref: "#/components/schemas/Money"
+          description: The same balance in the requested currency.
+
+    Balances:
+      type: object
+      required: [object, as_of, conversion, total, accounts]
+      properties:
+        object:
+          type: string
+          const: balances
+        as_of:
+          type: string
+          format: date
+          description: The day whose end-of-day position is reported.
+        conversion:
+          $ref: "#/components/schemas/Conversion"
+        total:
+          $ref: "#/components/schemas/Money"
+          description: Every account added together, in the requested currency.
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountBalance"
+
+    BankDetails:
+      type: object
+      description: Raw fields received from the bank.
+      required: [payer, payer_details, payee, payee_details, reference, additional]
+      properties:
+        payer:
+          type: [string, "null"]
+        payer_details:
+          type: [string, "null"]
+          description: Payer account identifiers as provided by the bank.
+        payee:
+          type: [string, "null"]
+        payee_details:
+          type: [string, "null"]
+        reference:
+          type: [string, "null"]
+          description: Payment reference or information line.
+        additional:
+          type: [string, "null"]
+
+    ExpandableCategory:
+      description: A category id, or the full category when named in `expand`.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: "#/components/schemas/Category"
+
+    ExpandableCounterparty:
+      description: A counterparty id, the full counterparty when named in `expand`, or `null` when unattributed.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: "#/components/schemas/Counterparty"
+        - type: "null"
+
+    ExpandableAccount:
+      description: An account id, or the full account when named in `expand`.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: "#/components/schemas/Account"
+
+    ExpandableLabels:
+      description: Label ids, or the full labels when `labels` is named in `expand`.
+      type: array
+      items:
+        oneOf:
+          - type: string
+            format: uuid
+          - $ref: "#/components/schemas/Label"
+
+    Transaction:
+      type: object
+      required:
+        - object
+        - id
+        - date
+        - amount
+        - currency
+        - direction
+        - status
+        - source
+        - description
+        - comment
+        - account
+        - category
+        - counterparty
+        - labels
+        - bank_details
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: transaction
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: Booking date. There is no time component.
+          example: "2026-09-03"
+        amount:
+          $ref: "#/components/schemas/Money"
+        currency:
+          $ref: "#/components/schemas/Currency"
+        direction:
+          $ref: "#/components/schemas/Direction"
+        status:
+          $ref: "#/components/schemas/TransactionStatus"
+        source:
+          $ref: "#/components/schemas/TransactionSource"
+        description:
+          type: [string, "null"]
+          example: ORANGE ROMANIA SA
+        comment:
+          type: [string, "null"]
+          description: Free text added by users in ThinkOut.
+        account:
+          $ref: "#/components/schemas/ExpandableAccount"
+        category:
+          oneOf:
+            - $ref: "#/components/schemas/ExpandableCategory"
+            - type: "null"
+          description: "`null` for a split transaction, whose categorisation lives on its pieces."
+        counterparty:
+          $ref: "#/components/schemas/ExpandableCounterparty"
+        labels:
+          $ref: "#/components/schemas/ExpandableLabels"
+        bank_details:
+          oneOf:
+            - $ref: "#/components/schemas/BankDetails"
+            - type: "null"
+          description: "`null` unless `source` is `bank`."
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: transaction
+        id: 8f1c0a4e-2b1d-4c8e-9f3a-7d6e5c4b3a21
+        date: "2026-09-03"
+        amount: "-1250.00"
+        currency: RON
+        direction: outflow
+        status: booked
+        source: bank
+        description: ORANGE ROMANIA SA
+        comment: null
+        account: c2d7e8f9-1a2b-4c3d-8e9f-0a1b2c3d4e5f
+        category: 3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d
+        counterparty: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        labels:
+          - 1f2e3d4c-5b6a-4978-8877-665544332211
+        bank_details:
+          payer: THINKOUT SRL
+          payer_details: RO49INGB0000999900000001
+          payee: ORANGE ROMANIA SA
+          payee_details: RO12BTRL0000000000000002
+          reference: Factura 2026-08 nr 1234567
+          additional: null
+        created_at: "2026-09-03T08:12:44Z"
+        updated_at: "2026-09-03T08:12:44Z"
+
+    BankStatus:
+      type: string
+      description: |
+        `connected` is working. `loading` is a sync in progress. `requires_action` needs a
+        person to sign in or re-approve the connection in ThinkOut. `error` is any other
+        failure. Only `connected` means the data behind it is current.
+      enum: [connected, loading, requires_action, error]
+
+    Bank:
+      type: object
+      description: One authorisation with one bank. Several accounts can share a connection, and a workspace can hold several connections to the same bank.
+      required:
+        - object
+        - id
+        - name
+        - country_code
+        - status
+        - last_sync_at
+        - consent_expires_at
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: bank
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: The bank's name as the provider reports it.
+          example: ING Bank
+        country_code:
+          type: [string, "null"]
+          description: ISO 3166-1 alpha-2 country of the bank.
+          pattern: "^[A-Z]{2}$"
+          example: RO
+        status:
+          $ref: "#/components/schemas/BankStatus"
+        last_sync_at:
+          type: [string, "null"]
+          format: date-time
+          description: When the provider last returned data successfully, or `null`. A `connected` connection with an old `last_sync_at` is the case worth alerting on.
+        consent_expires_at:
+          type: [string, "null"]
+          format: date-time
+          description: When the bank consent needs renewal, if the provider reports it.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: bank
+        id: 5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        name: ING Bank
+        country_code: RO
+        status: connected
+        last_sync_at: "2026-09-03T06:00:00Z"
+        consent_expires_at: "2026-11-30T00:00:00Z"
+        created_at: "2024-01-01T10:00:00Z"
+        updated_at: "2026-09-03T06:00:00Z"
+
+    ExpandableBank:
+      description: A bank connection id, the full connection when named in `expand`, or `null` for a manual account. On a `delegated` account the connection belongs to another workspace, so the id is returned but is neither expanded nor readable.
+      oneOf:
+        - type: string
+          format: uuid
+        - $ref: "#/components/schemas/Bank"
+        - type: "null"
+
+    Account:
+      type: object
+      required:
+        - object
+        - id
+        - name
+        - currency
+        - group
+        - source
+        - balance
+        - balance_as_of
+        - opening_balance
+        - opening_date
+        - bank
+        - external_account_id
+        - original_name
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: account
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: ING Curent
+        currency:
+          $ref: "#/components/schemas/Currency"
+        group:
+          type: [string, "null"]
+          description: Free-text grouping assigned in ThinkOut.
+          example: Operational
+        source:
+          $ref: "#/components/schemas/AccountSource"
+        balance:
+          $ref: "#/components/schemas/Money"
+        balance_as_of:
+          type: string
+          format: date
+          description: The day whose end-of-day balance is reported.
+        opening_balance:
+          $ref: "#/components/schemas/Money"
+        opening_date:
+          type: string
+          format: date
+          description: The date the opening balance applies to.
+        bank:
+          $ref: "#/components/schemas/ExpandableBank"
+        external_account_id:
+          type: [string, "null"]
+          description: The account identifier at the provider. `null` for manual accounts.
+        original_name:
+          type: [string, "null"]
+          description: The account name as the bank reports it, before any rename in ThinkOut. `null` for manual accounts.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: account
+        id: c2d7e8f9-1a2b-4c3d-8e9f-0a1b2c3d4e5f
+        name: ING Curent
+        currency: RON
+        group: Operational
+        source: bank
+        balance: "15230.45"
+        balance_as_of: "2026-09-03"
+        opening_balance: "1000.00"
+        opening_date: "2024-01-01"
+        bank: 5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f
+        external_account_id: "ACC-00012345"
+        original_name: Cont curent RON
+        created_at: "2024-01-01T10:00:00Z"
+        updated_at: "2026-08-30T06:00:00Z"
+
+    Category:
+      type: object
+      required: [object, id, name, code, direction, activity, parent_id, position, color, created_at, updated_at]
+      properties:
+        object:
+          type: string
+          const: category
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Telecom
+        code:
+          type: [string, "null"]
+          description: The category's identifier in the template the workspace was created from, or `null` for a category someone created. Only `uncategorized_inflows` and `uncategorized_outflows` exist in every workspace and are worth branching on.
+          example: uncategorized_outflows
+        direction:
+          $ref: "#/components/schemas/Direction"
+        activity:
+          $ref: "#/components/schemas/Activity"
+        parent_id:
+          type: [string, "null"]
+          format: uuid
+          description: "`null` for top-level categories."
+        position:
+          type: integer
+          description: Order among siblings, as shown in ThinkOut.
+        color:
+          type: [string, "null"]
+          description: Lowercase hex color as shown in ThinkOut.
+          pattern: "^#[0-9a-f]{6}$"
+          example: "#1b7fe4"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: category
+        id: 3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d
+        name: Telecom
+        code: null
+        direction: outflow
+        activity: operating
+        parent_id: 6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d
+        position: 2
+        color: "#1b7fe4"
+        created_at: "2024-01-01T10:00:00Z"
+        updated_at: "2024-01-01T10:00:00Z"
+
+    Counterparty:
+      type: object
+      required: [object, id, name, country_code, color, symbol, created_at, updated_at]
+      properties:
+        object:
+          type: string
+          const: counterparty
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Orange
+        country_code:
+          type: [string, "null"]
+          description: ISO 3166-1 alpha-2 country code.
+          pattern: "^[A-Z]{2}$"
+          example: RO
+        color:
+          type: [string, "null"]
+          pattern: "^#[0-9a-f]{6}$"
+        symbol:
+          type: [string, "null"]
+          description: Short text shown in the counterparty avatar in ThinkOut.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: counterparty
+        id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        name: Orange
+        country_code: RO
+        color: "#e4571b"
+        symbol: OR
+        created_at: "2024-02-14T08:00:00Z"
+        updated_at: "2024-02-14T08:00:00Z"
+
+    LabelType:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Quarter
+
+    Label:
+      type: object
+      required: [object, id, name, type, color, created_at, updated_at]
+      properties:
+        object:
+          type: string
+          const: label
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Q3
+        type:
+          oneOf:
+            - $ref: "#/components/schemas/LabelType"
+            - type: "null"
+          description: The group this label belongs to, or `null` when ungrouped. Types have no endpoint of their own.
+        color:
+          type: [string, "null"]
+          pattern: "^#[0-9a-f]{6}$"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: label
+        id: 1f2e3d4c-5b6a-4978-8877-665544332211
+        name: Q3
+        type:
+          id: 7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f
+          name: Quarter
+        color: "#7c3aed"
+        created_at: "2026-01-05T09:00:00Z"
+        updated_at: "2026-01-05T09:00:00Z"
+
+    Recurrence:
+      type: object
+      description: The recurring plan this forecast was generated from.
+      required: [id, name, interval, every, start_date, end_date, occurrences]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Office rent
+        interval:
+          $ref: "#/components/schemas/RecurrenceInterval"
+        every:
+          type: integer
+          minimum: 1
+          description: "Number of intervals between occurrences. `interval: month, every: 1` is monthly."
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        occurrences:
+          type: integer
+          description: Total number of forecasts generated by the plan.
+
+    Forecast:
+      type: object
+      required:
+        - object
+        - id
+        - date
+        - amount
+        - remaining_amount
+        - currency
+        - direction
+        - status
+        - description
+        - comment
+        - category
+        - counterparty
+        - labels
+        - recurrence
+        - linked_transactions
+        - created_at
+        - updated_at
+      properties:
+        object:
+          type: string
+          const: forecast
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: The day the movement is expected.
+        amount:
+          $ref: "#/components/schemas/Money"
+        remaining_amount:
+          $ref: "#/components/schemas/Money"
+          description: The part of `amount` not yet matched by linked transactions.
+        currency:
+          $ref: "#/components/schemas/Currency"
+        direction:
+          $ref: "#/components/schemas/Direction"
+        status:
+          $ref: "#/components/schemas/ForecastStatus"
+        description:
+          type: [string, "null"]
+        comment:
+          type: [string, "null"]
+        category:
+          $ref: "#/components/schemas/ExpandableCategory"
+        counterparty:
+          $ref: "#/components/schemas/ExpandableCounterparty"
+        labels:
+          $ref: "#/components/schemas/ExpandableLabels"
+        recurrence:
+          oneOf:
+            - $ref: "#/components/schemas/Recurrence"
+            - type: "null"
+        linked_transactions:
+          type: array
+          description: Transactions matched to this forecast, as ids, or as transactions when `linked_transactions` is named in `expand`.
+          items:
+            oneOf:
+              - type: string
+                format: uuid
+              - $ref: "#/components/schemas/Transaction"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        object: forecast
+        id: 7e6d5c4b-3a29-4180-9f8e-7d6c5b4a3928
+        date: "2026-09-15"
+        amount: "-4200.00"
+        remaining_amount: "-4200.00"
+        currency: EUR
+        direction: outflow
+        status: planned
+        description: Office rent
+        comment: null
+        category: 2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b
+        counterparty: 8b9c0d1e-2f3a-4b5c-8d6e-7f8a9b0c1d2e
+        labels:
+          - 0f1e2d3c-4b5a-4968-8776-655443322110
+        recurrence:
+          id: 4c5d6e7f-8091-4a2b-9c3d-4e5f6a7b8c9d
+          name: Office rent
+          interval: month
+          every: 1
+          start_date: "2026-01-15"
+          end_date: "2026-12-15"
+          occurrences: 12
+        linked_transactions: []
+        created_at: "2025-12-20T09:30:00Z"
+        updated_at: "2025-12-20T09:30:00Z"

@@ -1,0 +1,77 @@
+---
+title: "Erori"
+description: "Un singur înveliș, coduri stabile și un id de cerere pentru suport."
+---
+
+Erorile folosesc coduri de status HTTP și un corp JSON cu un singur obiect
+`error`:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "invalid_parameter",
+    "message": "Parameter 'from' must be a date in YYYY-MM-DD format.",
+    "param": "from",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+| Câmp | Descriere |
+|---|---|
+| `type` | Clasa generală: `invalid_request`, `authentication`, `not_found`, `rate_limit`, `server`. |
+| `code` | Motiv stabil, citibil de mașină. Ramifică logica pe el, nu pe `message`. |
+| `message` | Explicație pentru oameni, în engleză. Formularea se poate schimba. |
+| `param` | Parametrul de query sau de cale vinovat, când există unul. |
+| `request_id` | Menționează-l când contactezi suportul. |
+
+## Coduri
+
+| Status | `type` | `code` |
+|---|---|---|
+| `400` | `invalid_request` | `invalid_parameter`, `invalid_cursor`, `limit_out_of_range`, `invalid_expand`, `as_of_in_future` |
+| `401` | `authentication` | `unauthorized` |
+| `403` | `authentication` | `forbidden` |
+| `404` | `not_found` | `resource_not_found` |
+| `422` | `invalid_request` | `too_many_groups`, `period_too_long` |
+| `429` | `rate_limit` | `rate_limited` |
+| `500` | `server` | `internal_error` |
+
+## Rapoarte care cer prea mult
+
+Un raport poate calcula cel mult 1000 de rânduri. `period_too_long` apare
+doar din fereastră și interval; `too_many_groups` după grupare. Mesajul
+numește ce ar produce cererea și plafonul:
+
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "code": "too_many_groups",
+    "message": "Grouping by counterparty over this period produces 1240 groups. The maximum is 1000. Narrow the period or the filters.",
+    "param": "group_by",
+    "request_id": "0HNF8K3QJL2VM:00000001"
+  }
+}
+```
+
+Rapoartele nu sunt niciodată parțiale. O cerere fie întoarce un răspuns
+complet, fie eșuează.
+
+## Limite de rată
+
+Fiecare cheie poate face 120 de cereri pe minut. Cererile fără o cheie validă
+împart 60 pe minut per adresă IP. Fiecare cerere contează ca una, indiferent
+de dimensiunea paginii, așa că paginarea cu `limit=500` este cel mai ieftin
+mod de a extrage intervale mari.
+
+Fiecare răspuns poartă `X-RateLimit-Limit`, `X-RateLimit-Remaining` și
+`X-RateLimit-Reset`. Un `429` poartă și `Retry-After`. Atât `Reset`, cât și
+`Retry-After` numără secundele până se resetează minutul.
+
+## Id-uri necunoscute
+
+Cererea unui id care nu există în spațiul de lucru al cheii întoarce `404`,
+inclusiv pentru id-uri care există în alt spațiu de lucru. API-ul nu confirmă
+niciodată existența datelor pe care nu le poți citi.

@@ -1,0 +1,125 @@
+---
+title: "Data model"
+description: "How money, dates, directions and references are represented, and how a list differs from a summary."
+---
+
+## Money
+
+Amounts are decimal strings, never floats, and never minor units:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parse them with a decimal type. Every amount on an object is in that
+object's `currency`, an ISO 4217 code.
+
+Transaction amounts are **signed**: negative is money leaving the workspace,
+positive is money coming in. The `direction` field, `"inflow"` or
+`"outflow"`, is derived from the sign, so the two never disagree and you can
+group by direction without parsing. Summing `amount` over any set of
+transactions gives their net movement.
+
+## Dates
+
+Transactions have a `date`, an ISO 8601 calendar date such as
+`"2026-09-03"`. There is no time component. Date filters are inclusive on
+both ends.
+
+Audit fields `created_at` and `updated_at` are UTC timestamps in RFC 3339
+format.
+
+## Objects and references
+
+Every object has an `object` field naming its type and an `id`, a UUID
+string. Related objects come back as ids:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Ask for the objects themselves with `expand`, naming the relations you want,
+comma-separated. Each id is then replaced by the object it points at:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+On a transaction you can expand `account`, `category`, `counterparty` and
+`labels`. On an account, `bank`. Expansion goes one level deep, and an
+unsupported name is rejected with `400 invalid_expand`.
+
+An account's `bank` is the id of the connection feeding it, `null` for
+accounts kept by hand:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+Going the other way, from a connection to its accounts, is a filter rather
+than an expansion: `/accounts?bank_id=<id>`.
+
+Nullable references are `null`, never omitted. Arrays are `[]` when empty.
+
+## Enumerations
+
+All enumerations are lowercase strings.
+
+| Field | Values |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `bank.status` | `connected`, `loading`, `requires_action`, `error` |
+| `category.activity` | `operating`, `investing`, `financing` |
+
+New values may be added in a minor release. Treat unknown values as opaque
+rather than failing.
+
+## Lists and summaries
+
+`/transactions` is a bank statement: one row per movement, and every movement
+is a row. A transfer between two of your own accounts is two rows, one on
+each account, and a transaction someone excluded from cash flow inside
+ThinkOut is still a row. Nothing marks either.
+
+`/transactions/summary` computes totals with the same rules as the cash flow
+screen:
+
+- transfers between your own accounts are excluded
+- movements the user excluded are left out
+- split payments are counted once
+- foreign currency transactions are converted at the rate on the movement date
+
+<Note>
+  Summing a list counts every transfer twice. For figures that match what
+  ThinkOut shows, use the summary endpoint.
+</Note>
+
+A summary returns one row per period and a `totals` block for the whole
+window, so you never add rows yourself:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+Transfers and excluded movements are reported on their own lines. The four
+balance fields are `null` whenever `group_by` or `direction` is given. On
+`/balances` each account converts whole at one rate; the `conversion` object
+on every report says which basis applied.

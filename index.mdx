@@ -1,0 +1,58 @@
+---
+title: "Introduction"
+sidebarTitle: "Introduction"
+description: "Read the bank connections, accounts and transactions of a ThinkOut workspace — in a conversation with an AI assistant, or from your own tools."
+hideFooterPagination: true
+---
+
+Everything your company's money has done is already in ThinkOut — every
+transaction in and out, every account, every counterparty, sorted into
+categories and labels that mean something to your business.
+
+Now you can ask about it in plain language. Not just what the numbers are, but
+what sits behind them: which clients are slowing down, where a cost crept up,
+whether the month is going the way you think it is. The kind of answer that
+makes a decision feel less like a guess.
+
+**If you want to ask questions in plain language**, connect ThinkOut to an AI
+assistant. You sign in with your ThinkOut account, no keys involved, and from
+there you just ask.
+
+**If you want the data inside your own systems**, use the REST API. An API key
+bound to one workspace, and from there your BI tool, your ERP, the script that
+runs every Monday morning — whatever you already have.
+
+<CardGroup cols={2}>
+  <Card title="MCP server" icon="message" href="/guides/mcp">
+    Ask about your company's money in plain language, from Claude, ChatGPT,
+    Claude Code, Codex or Gemini. You sign in with your ThinkOut account — no API
+    keys.
+  </Card>
+  <Card title="REST API" icon="code" href="/guides/general">
+    Pull balances, transactions and reports into your own tools with an API key
+    bound to one workspace.
+  </Card>
+</CardGroup>
+
+## The same numbers, either way
+
+Both routes are read-only. Nothing can be edited, categorised or paid for from
+here — this is a window onto your data, not a set of controls.
+
+And both return figures computed by ThinkOut, using the same rules as the cash
+flow screen: transfers between your own accounts excluded, split payments
+counted once, foreign currency converted at the rate on the movement date.
+
+So a total you see in a conversation, the same total in your dashboard, and the
+same total in the app are one number, not three that happen to be close. That
+consistency is the point. It is what makes the data safe to build on.
+
+## Where to start
+
+If you are setting this up for yourself, start with the
+[MCP server](/guides/mcp) — it takes a few minutes and needs nothing technical.
+
+If you are building something, start with
+[authentication](/guides/authentication), then the
+[data model](/guides/data-model), which explains how accounts, movements,
+categories and labels fit together before you write your first request.

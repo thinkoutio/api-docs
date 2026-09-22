@@ -1,0 +1,78 @@
+---
+title: "Data access"
+sidebarTitle: "Data access"
+description: "Where the numbers in the answers come from, what the assistant can ask ThinkOut for, and how you manage connections."
+---
+
+## Where the numbers come from
+
+Every result is computed by ThinkOut, with the same rules as the cash flow
+screen:
+
+- transfers between your own accounts are excluded
+- movements you excluded are left out
+- split payments are counted once
+- foreign currency transactions are converted at the rate on the movement date
+
+You can check at any time that the results in the conversation and the ones
+ThinkOut gives you directly in the app match.
+
+<img src="/images/mcp/same-number-app-and-chat.png" alt="The year-to-date inflows, outflows and net result in the ThinkOut app, and the same figures in the assistant's answer" />
+
+The assistant works from the data in your transactions and bank accounts. For
+now it does not see invoices, contracts, headcount or payment terms, so a
+question that depends on that kind of information (for example "how many days
+pass from invoice to payment" or "what does an employee cost me") needs details
+that only you can supply. Questions about projects and profitability will be as
+relevant as your classification in ThinkOut is accurate.
+
+## What your assistant can do
+
+Behind the conversation, the assistant can ask ThinkOut:
+
+| It can | Which lets you ask |
+| --- | --- |
+| List the workspaces you have access to | "Which companies do I have here?" |
+| Read your setup — banks, accounts, categories, labels, counterparties | Questions by name: "the BT accounts", "marketing", "uncategorised transactions" |
+| Look up several names at once | Typos and missing diacritics resolve anyway |
+| Read daily account balances | Balances on any date, by bank, by currency |
+| Read transactions aggregated over a period, with one grouping | Totals, trends, rankings, comparisons |
+| List individual transactions, fifty at a time | The transactions behind an aggregated result |
+| Report how often each category, label or counterparty is used | "What categories do I have?", "Who are my top three clients?" |
+| List your categorisation rules | "Why did this land in that category?" |
+| Read transfers and excluded transactions | "What moved between my own accounts?" |
+
+<Warning>
+  The assistant cannot see forecasts, budgets or scenarios yet, and it cannot
+  change anything: no edits to your data, no categorisation, no payment
+  execution.
+</Warning>
+
+## Managing your assistant's connection
+
+Every assistant you connect appears under **My account** → **Connected apps**,
+with the workspace it connected to and when it was last used.
+
+Disconnecting usually takes effect within an hour, or immediately, on the next
+question that requires a fresh sign-in. If you lose your role in a workspace,
+access disappears automatically.
+
+<video
+  src="/videos/mcp/connected-apps.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Disconnecting an assistant from the Connected apps section of My account"
+/>
+
+## Good to know
+
+- Your assistant stays signed in for thirty days without use, and renews itself
+  while you keep using it.
+- Transaction lists arrive fifty at a time; ask for the next page to continue.
+- When something could be either a client or a label, the assistant asks which
+  one you meant rather than guessing.
+- These docs are public. An assistant can read them without signing in, which
+  helps it explore the API, but to reach your data it needs the connection only
+  you can make.

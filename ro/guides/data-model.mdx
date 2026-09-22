@@ -1,0 +1,129 @@
+---
+title: "Modelul de date"
+description: "Cum sunt reprezentate sumele, datele, direcțiile și referințele, și cum diferă o listă de o sinteză."
+---
+
+## Sume
+
+Sumele sunt șiruri decimale, niciodată numere în virgulă mobilă și niciodată
+subunități:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parsează-le cu un tip decimal. Toate sumele unui obiect sunt în `currency`-ul
+acelui obiect, un cod ISO 4217.
+
+Sumele tranzacțiilor au **semn**: negativ înseamnă bani care ies din spațiul
+de lucru, pozitiv înseamnă bani care intră. Câmpul `direction`, `"inflow"`
+sau `"outflow"`, este derivat din semn, deci cele două nu sunt niciodată în
+contradicție și poți grupa după direcție fără să parsezi. Suma câmpului
+`amount` pe orice set de tranzacții dă mișcarea lor netă.
+
+## Date
+
+Tranzacțiile au un `date`, o dată calendaristică ISO 8601 precum
+`"2026-09-03"`. Nu există componentă de timp. Filtrele pe dată sunt inclusive
+la ambele capete.
+
+Câmpurile de audit `created_at` și `updated_at` sunt momente UTC în format
+RFC 3339.
+
+## Obiecte și referințe
+
+Fiecare obiect are un câmp `object` cu numele tipului și un `id`, un șir UUID.
+Obiectele legate vin ca identificatori:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Cere obiectele în sine cu `expand`, numind relațiile dorite, separate prin
+virgulă. Fiecare identificator este atunci înlocuit cu obiectul către care
+arată:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+La o tranzacție poți extinde `account`, `category`, `counterparty` și
+`labels`. La un cont, `bank`. Extinderea merge un singur nivel, iar un nume
+nesuportat este respins cu `400 invalid_expand`.
+
+Câmpul `bank` al unui cont este identificatorul conexiunii care îl
+alimentează, `null` pentru conturile ținute manual:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+În sens invers, de la o conexiune la conturile ei, se folosește un filtru, nu
+o extindere: `/accounts?bank_id=<id>`.
+
+Referințele nule sunt `null`, niciodată omise. Listele goale sunt `[]`.
+
+## Enumerări
+
+Toate enumerările sunt șiruri cu litere mici.
+
+| Câmp | Valori |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `bank.status` | `connected`, `loading`, `requires_action`, `error` |
+| `category.activity` | `operating`, `investing`, `financing` |
+
+Pot apărea valori noi într-o versiune minoră. Tratează valorile necunoscute ca
+opace, nu ca erori.
+
+## Liste și sinteze
+
+`/transactions` este un extras de cont: câte un rând pentru fiecare mișcare,
+și fiecare mișcare are un rând. Un transfer între două conturi proprii
+înseamnă două rânduri, câte unul pe fiecare cont, iar o tranzacție exclusă din
+cash flow în ThinkOut rămâne un rând. Nimic nu le marchează.
+
+`/transactions/summary` calculează totalurile după aceleași reguli ca ecranul
+de cash flow:
+
+- transferurile între conturile tale sunt excluse
+- mișcările excluse de utilizator sunt lăsate deoparte
+- plățile împărțite sunt numărate o singură dată
+- tranzacțiile în valută sunt convertite la cursul din ziua mișcării
+
+<Note>
+  Dacă însumezi o listă, fiecare transfer este numărat de două ori. Pentru
+  cifre care se potrivesc cu ce arată ThinkOut, folosește endpoint-ul de
+  sinteză.
+</Note>
+
+O sinteză întoarce câte un rând pentru fiecare perioadă și un bloc `totals`
+pentru întregul interval, ca să nu aduni niciodată rânduri tu însuți:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+Transferurile și mișcările excluse sunt raportate pe liniile lor separate.
+Cele patru câmpuri de sold sunt `null` ori de câte ori este trimis `group_by`
+sau `direction`. Pe `/balances` fiecare cont se convertește întreg, la un
+singur curs; obiectul `conversion` din fiecare raport spune care bază s-a
+aplicat.

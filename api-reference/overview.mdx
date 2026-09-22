@@ -1,0 +1,28 @@
+---
+title: "API overview"
+description: "Conventions shared by every endpoint."
+---
+
+| | |
+|---|---|
+| Base URL | `https://api.thinkout.io/v1` |
+| [Authentication](/guides/authentication) | `Authorization: Bearer <api key>`, one key per workspace |
+| Format | JSON, `snake_case` keys, UTF-8 |
+| Ids | UUID strings |
+| [Money](/guides/data-model#money) | Signed decimal strings with two decimals, plus an ISO 4217 `currency` |
+| [Dates](/guides/data-model#dates) | `YYYY-MM-DD`; timestamps in RFC 3339 UTC |
+| [Lists](/guides/pagination) | `{ object, data, has_more, next_cursor }`, `limit` up to 500 |
+| [Errors](/guides/errors) | `{ error: { type, code, message, param, request_id } }` |
+| [Rate limit](/guides/errors#rate-limits) | 120 requests a minute per key; `X-RateLimit-*` headers on every response |
+| [Reports](/guides/data-model#lists-and-summaries) | `/transactions/summary` and `/balances` return totals computed with the cash flow screen's rules |
+
+## Versioning
+
+The version is in the path. Within `v1` changes are additive only: new fields,
+enumeration values, optional filters and endpoints. Anything else ships as
+`v2`. Ignore unknown fields and treat unknown enumeration values as opaque.
+
+## Playground
+
+Every endpoint page has a playground. Paste an API key in the authorization
+field to run requests against your own workspace. Keys stay in your browser.
