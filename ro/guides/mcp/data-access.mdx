@@ -1,0 +1,91 @@
+---
+title: "Accesul la date"
+sidebarTitle: "Accesul la date"
+description: "De unde vin cifrele din răspunsuri, ce poate cere asistentul de la ThinkOut și cum gestionezi conexiunile."
+---
+
+## De unde vin cifrele
+
+Fiecare rezultat e calculat de ThinkOut, după aceleași reguli ca ecranul de cash
+flow:
+
+- transferurile între conturile tale sunt excluse
+- mișcările pe care le-ai exclus sunt lăsate deoparte
+- plățile împărțite sunt numărate o singură dată
+- tranzacțiile în valută sunt convertite la cursul din ziua mișcării
+
+Poți verifica oricând dacă rezultatele din conversație și cele pe care ți le
+oferă ThinkOut direct în aplicație se potrivesc.
+
+<img src="/images/mcp/same-number-app-and-chat-ro.png" alt="Încasările, plățile și rezultatul net de la începutul anului în aplicația ThinkOut, și aceleași cifre în răspunsul asistentului" />
+
+Asistentul se bazează pe datele din tranzacții, previziuni și conturi bancare.
+Momentan, nu vede facturi, contracte, număr de angajați sau termene de plată, așa că o
+întrebare care depinde de astfel de informații (de exemplu „câte zile trec de la
+factură până la încasare" sau „cât mă costă un angajat") are nevoie de detalii
+pe care doar tu i le poți furniza. Întrebările despre proiecte și profitabilitate
+vor fi relevante în măsura în care există o clasificare cât mai corectă în
+ThinkOut.
+
+## Ce poate face asistentul tău
+
+În spatele conversației, asistentul poate cere de la ThinkOut:
+
+| Poate | Ceea ce îți permite să întrebi |
+| --- | --- |
+| Să listeze spațiile de lucru la care ai acces | „Ce companii am aici?" |
+| Să-ți citească configurarea — bănci, conturi, categorii, etichete, parteneri | Întrebări după nume: „conturile BT", „marketing", „tranzacții necategorisite" |
+| Să caute mai multe nume deodată | Greșelile de tastare și diacriticele lipsă se rezolvă oricum |
+| Să citească soldurile zilnice ale conturilor | Solduri la orice dată, pe bancă, pe monedă |
+| Să citească tranzacțiile agregate pe o perioadă, cu o grupare | Totaluri, tendințe, clasamente, comparații |
+| Să listeze tranzacții individuale, câte cincizeci odată | Tranzacțiile din spatele unui rezultat agregat |
+| Să raporteze cât de des e folosită fiecare categorie, etichetă sau partener | „Ce categorii am?", „Care sunt primii trei clienți ai mei?" |
+| Să listeze regulile tale de categorisire | „De ce a ajuns asta în categoria aia?" |
+| Să citească transferurile și tranzacțiile excluse | „Ce mișcări am avut între conturile proprii?" |
+| Să citească previziunile agregate pe o perioadă, cu o grupare | „Ce încasări așteptăm luna viitoare și de la cine?" |
+| Să listeze previziuni individuale, câte cincizeci odată, după stare | „Ce plăți planificate sunt restante?" |
+| Să citească cash flow-ul, ce s-a întâmplat și ce mai este planificat, cu solduri proiectate | „Cum închidem luna?", „Cât va fi soldul la sfârșitul anului?" |
+
+Banii planificați rămân separați de banii care s-au mișcat. Într-un răspuns
+despre cash flow, asistentul spune ce parte s-a întâmplat deja și ce parte mai
+este așteptată, iar cele două adunate dau ce arată ecranul de cash flow.
+
+<Warning>
+  Asistentul nu poate vedea încă bugete sau scenarii și nu poate schimba
+  nimic: fără modificări pe date, fără previziuni create, fără categorisire,
+  fără execuție de plăți.
+</Warning>
+
+## Gestionarea conexiunii cu asistentul tău
+
+Fiecare asistent pe care îl conectezi apare la **Contul meu** → **Aplicații
+conectate**, cu spațiul de lucru la care s-a conectat și când a fost folosit
+ultima dată.
+
+De regulă, deconectarea are loc într-o oră sau imediat, la următoarea întrebare
+care cere o nouă autentificare. Dacă îți pierzi rolul într-un spațiu de lucru,
+accesul dispare automat.
+
+<video
+  src="/videos/mcp/connected-apps-ro.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Deconectarea unui asistent din secțiunea Aplicații conectate de la Contul meu"
+/>
+
+## Bine de știut
+
+- Asistentul rămâne autentificat timp de treizeci de zile fără să-l folosești și
+  se reînnoiește singur cât timp continui să-l folosești.
+- Listele de tranzacții și de previziuni vin câte cincizeci odată; cere pagina
+  următoare ca să continui.
+- Previziunile nu au cont. Când restrângi o întrebare de cash flow la o bancă
+  sau la un cont, cifrele realizate și soldurile urmează filtrul, iar partea
+  planificată acoperă întregul spațiu de lucru; asistentul îți spune asta.
+- Când o informație poate fi și client, și etichetă, asistentul te întreabă la
+  care te-ai referit, în loc să ghicească.
+- Documentația e publică. Un asistent o poate citi fără autentificare, ceea ce
+  îl ajută să exploreze API-ul, dar ca să ajungă la datele tale are nevoie de
+  conexiunea pe care doar tu o poți face.

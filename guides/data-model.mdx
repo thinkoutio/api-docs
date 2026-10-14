@@ -1,0 +1,205 @@
+---
+title: "Data model"
+description: "How money, dates, directions and references are represented, and how a list differs from a summary."
+---
+
+## Money
+
+Amounts are decimal strings, never floats, and never minor units:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parse them with a decimal type. Every amount on an object is in that
+object's `currency`, an ISO 4217 code.
+
+Transaction amounts are **signed**: negative is money leaving the workspace,
+positive is money coming in. The `direction` field, `"inflow"` or
+`"outflow"`, is derived from the sign, so the two never disagree and you can
+group by direction without parsing. Summing `amount` over any set of
+transactions gives their net movement.
+
+## Dates
+
+Transactions and forecasts have a `date`, an ISO 8601 calendar date such as
+`"2026-09-03"`. There is no time component. Date filters are inclusive on
+both ends.
+
+Audit fields `created_at` and `updated_at` are UTC timestamps in RFC 3339
+format.
+
+## Objects and references
+
+Every object has an `object` field naming its type and an `id`, a UUID
+string. Related objects come back as ids:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Ask for the objects themselves with `expand`, naming the relations you want,
+comma-separated. Each id is then replaced by the object it points at:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+On a transaction you can expand `account`, `category`, `counterparty` and
+`labels`. On a forecast, `category`, `counterparty`, `labels` and
+`linked_transactions`. On an account, `bank`. Expansion goes one level deep,
+and an unsupported name is rejected with `400 invalid_expand`.
+
+An account's `bank` is the id of the connection feeding it, `null` for
+accounts kept by hand:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+Going the other way, from a connection to its accounts, is a filter rather
+than an expansion: `/accounts?bank_id=<id>`.
+
+Nullable references are `null`, never omitted. Arrays are `[]` when empty.
+
+## Forecasts
+
+A forecast is money you plan to receive or pay on a `date`. Its `amount` is
+what you planned, signed like a transaction amount. Its `remaining_amount` is
+the part no transaction has matched yet, so the two are equal until the first
+transaction is linked, and `remaining_amount` is `0.00` once the forecast is
+realised.
+
+| `status` | Meaning |
+|---|---|
+| `planned` | Dated today or later, nothing matched yet |
+| `overdue` | Dated before today, nothing matched yet |
+| `partial` | Some transactions matched, something still expected |
+| `realised` | Fully matched, nothing still expected |
+
+A forecast has a category, optionally a counterparty and labels, and a
+`recurrence` when a recurring plan generated it. Like the category and the
+counterparty, `recurrence` is an id unless you name it in `expand`, which
+returns the plan: its name, how often it repeats, and its first and last date.
+`linked_transactions` holds the transactions matched to it, as ids, or as
+objects with `expand=linked_transactions`.
+
+Forecasts have no account. An `account_id` or `bank_id` filter applies to
+transactions and balances, never to forecasts.
+
+`/forecasts` returns the forecasts that have a date.
+
+## Enumerations
+
+All enumerations are lowercase strings.
+
+| Field | Values |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `forecast.status` | `planned`, `overdue`, `partial`, `realised` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `bank.status` | `connected`, `loading`, `requires_action`, `error` |
+| `category.activity` | `operating`, `investing`, `financing` |
+
+New values may be added in a minor release. Treat unknown values as opaque
+rather than failing.
+
+## Lists and summaries
+
+`/transactions` is a bank statement: one row per movement, and every movement
+is a row. A transfer between two of your own accounts is two rows, one on
+each account, and a transaction someone excluded from cash flow inside
+ThinkOut is still a row. Nothing marks either.
+
+`/transactions/summary` computes totals with the same rules as the cash flow
+screen:
+
+- transfers between your own accounts are excluded
+- movements the user excluded are left out
+- split payments are counted once
+- foreign currency transactions are converted at the rate on the movement date
+
+<Note>
+  Summing a list counts every transfer twice. For figures that match what
+  ThinkOut shows, use the summary endpoint.
+</Note>
+
+A summary returns one row per period and a `totals` block for the whole
+window, so you never add rows yourself:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+Transfers and excluded movements are reported on their own lines. The four
+balance fields are `null` whenever `group_by` or `direction` is given. On
+`/balances` each account converts whole at one rate; the `conversion` object
+on every report says which basis applied.
+
+`/forecasts/summary` totals forecasts the same way, one row per period and a
+`totals` block: `amount` is what was planned and `remaining_amount` what is
+still expected. Every status counts, so a realised forecast adds to `amount`
+and nothing to `remaining_amount`.
+
+### Cash flow summary
+
+`/cash-flow/summary` returns what the cash flow screen shows, in two halves.
+The actual half is the transactions in the period, counted as
+`/transactions/summary` counts them. The forecast half is the
+`remaining_amount` of the forecasts still open in the period. `inflow`,
+`outflow` and `net` add the two halves and equal the screen's cells:
+
+```json
+{
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-30",
+  "group": null,
+  "currency": "RON",
+  "actual_inflow": "12400.00",
+  "actual_outflow": "-8150.00",
+  "actual_count": 31,
+  "forecast_inflow": "68000.00",
+  "forecast_outflow": "-54200.00",
+  "forecast_count": 17,
+  "inflow": "80400.00",
+  "outflow": "-62350.00",
+  "net": "18050.00",
+  "starting_balance": "172379.35",
+  "opened_accounts": "0.00",
+  "transfers": "0.00",
+  "excluded": "0.00",
+  "final_balance": "190429.35"
+}
+```
+
+On a future period `final_balance` is the projected balance, the balance
+carried forward through the forecasts up to the period's end.
+
+Overdue forecasts, dated before today and still open, are not counted in the
+rows, as on the screen. Pass `include_overdue=true` to count them in the
+periods they are dated in. `totals.overdue_inflow` and
+`totals.overdue_outflow` always report the overdue amounts the rows did not
+count.
+
+<Note>
+  An `account_id` or `bank_id` filter narrows the actual half and the
+  balances. Forecasts have no account, so the forecast half always covers the
+  whole workspace; `forecast_scope` in the response says so.
+</Note>

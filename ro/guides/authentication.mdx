@@ -1,0 +1,47 @@
+---
+title: "Autentificare"
+description: "Cheile API sunt legate de un singur spațiu de lucru și se trimit ca bearer token."
+---
+
+Fiecare cerere poartă o cheie API în antetul `Authorization`:
+
+```bash
+curl https://api.thinkout.io/v1/accounts \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Chei și spații de lucru
+
+O cheie aparține exact unui spațiu de lucru. Nu există un parametru pentru
+spațiul de lucru în URL: cheia decide ce spațiu citești. Pentru mai multe
+spații de lucru, creează o cheie pentru fiecare.
+
+Proprietarii și managerii creează cheia în ThinkOut, la **Setări** →
+**Spațiu de lucru**, de unde o pot citi din nou oricând. Păstrează-o într-un
+manager de secrete, niciodată în cod client sau într-un repository public.
+
+## Permisiuni
+
+O cheie citește tot ce există în spațiul ei de lucru și nu scrie nimic. Nu
+există scope-uri de ales.
+
+## Regenerare și revocare
+
+Un spațiu de lucru are o singură cheie la un moment dat. Regenerarea, din
+același card, emite o cheie nouă, iar cea veche nu mai funcționează imediat,
+așa că actualizează-ți integrarea în același pas. Revocarea lasă spațiul de
+lucru fără cheie.
+
+<Note>
+  Ambele acțiuni sunt imediate: următoarea cerere cu cheia veche primește
+  `401`. Proprietarii și managerii contului primesc un e-mail la fiecare.
+</Note>
+
+## Răspunsuri de eroare
+
+| Status | `error.code` | Semnificație |
+|---|---|---|
+| `401` | `unauthorized` | Antetul lipsește, este malformat sau cheia este necunoscută ori revocată. |
+| `403` | `forbidden` | Cheia este validă, dar planul ThinkOut al companiei nu include API-ul. |
+
+Vezi [Erori](/ro/guides/errors) pentru structura răspunsului.

@@ -1,0 +1,210 @@
+---
+title: "Modelul de date"
+description: "Cum sunt reprezentate sumele, datele, direcțiile și referințele, și cum diferă o listă de o sinteză."
+---
+
+## Sume
+
+Sumele sunt șiruri decimale, niciodată numere în virgulă mobilă și niciodată
+subunități:
+
+```json
+{ "amount": "-1250.00", "currency": "RON" }
+```
+
+Parsează-le cu un tip decimal. Toate sumele unui obiect sunt în `currency`-ul
+acelui obiect, un cod ISO 4217.
+
+Sumele tranzacțiilor au **semn**: negativ înseamnă bani care ies din spațiul
+de lucru, pozitiv înseamnă bani care intră. Câmpul `direction`, `"inflow"`
+sau `"outflow"`, este derivat din semn, deci cele două nu sunt niciodată în
+contradicție și poți grupa după direcție fără să parsezi. Suma câmpului
+`amount` pe orice set de tranzacții dă mișcarea lor netă.
+
+## Date
+
+Tranzacțiile și previziunile au un `date`, o dată calendaristică ISO 8601
+precum `"2026-09-03"`. Nu există componentă de timp. Filtrele pe dată sunt
+inclusive la ambele capete.
+
+Câmpurile de audit `created_at` și `updated_at` sunt momente UTC în format
+RFC 3339.
+
+## Obiecte și referințe
+
+Fiecare obiect are un câmp `object` cu numele tipului și un `id`, un șir UUID.
+Obiectele legate vin ca identificatori:
+
+```json
+"category": "3b4c5d6e-7f80-4a1b-9c2d-3e4f5a6b7c8d"
+```
+
+Cere obiectele în sine cu `expand`, numind relațiile dorite, separate prin
+virgulă. Fiecare identificator este atunci înlocuit cu obiectul către care
+arată:
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?expand=category,counterparty" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+La o tranzacție poți extinde `account`, `category`, `counterparty` și
+`labels`. La o previziune, `category`, `counterparty`, `labels` și
+`linked_transactions`. La un cont, `bank`. Extinderea merge un singur nivel,
+iar un nume nesuportat este respins cu `400 invalid_expand`.
+
+Câmpul `bank` al unui cont este identificatorul conexiunii care îl
+alimentează, `null` pentru conturile ținute manual:
+
+```bash
+curl "https://api.thinkout.io/v1/accounts?expand=bank" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+În sens invers, de la o conexiune la conturile ei, se folosește un filtru, nu
+o extindere: `/accounts?bank_id=<id>`.
+
+Referințele nule sunt `null`, niciodată omise. Listele goale sunt `[]`.
+
+## Previziuni
+
+O previziune este o sumă pe care plănuiești să o încasezi sau să o plătești la
+o dată, `date`. `amount` este ce ai planificat, cu semn, ca suma unei
+tranzacții. `remaining_amount` este partea pe care nicio tranzacție nu a
+acoperit-o încă, deci cele două sunt egale până la prima tranzacție asociată,
+iar `remaining_amount` este `0.00` odată ce previziunea este realizată.
+
+| `status` | Înseamnă |
+|---|---|
+| `planned` | Datată azi sau mai târziu, nimic acoperit încă |
+| `overdue` | Datată înainte de azi, nimic acoperit încă; restantă |
+| `partial` | Câteva tranzacții asociate, mai este ceva de așteptat |
+| `realised` | Acoperită integral, nu mai este nimic de așteptat |
+
+O previziune are o categorie, opțional un partener și etichete, și un
+`recurrence` când a fost generată dintr-un plan recurent. La fel ca la categorie
+și partener, `recurrence` este un identificator, dacă nu îl treci în `expand`,
+caz în care primești planul: numele lui, cât de des se repetă, prima și ultima
+dată. `linked_transactions` conține tranzacțiile asociate ei, ca identificatori,
+sau ca obiecte cu `expand=linked_transactions`.
+
+Previziunile nu au cont. Un filtru `account_id` sau `bank_id` se aplică
+tranzacțiilor și soldurilor, niciodată previziunilor.
+
+`/forecasts` întoarce previziunile care au o dată.
+
+## Enumerări
+
+Toate enumerările sunt șiruri cu litere mici.
+
+| Câmp | Valori |
+|---|---|
+| `direction` | `inflow`, `outflow` |
+| `transaction.status` | `booked`, `pending` |
+| `transaction.source` | `manual`, `import`, `bank` |
+| `forecast.status` | `planned`, `overdue`, `partial`, `realised` |
+| `account.source` | `manual`, `bank`, `delegated` |
+| `bank.status` | `connected`, `loading`, `requires_action`, `error` |
+| `category.activity` | `operating`, `investing`, `financing` |
+
+Pot apărea valori noi într-o versiune minoră. Tratează valorile necunoscute ca
+opace, nu ca erori.
+
+## Liste și sinteze
+
+`/transactions` este un extras de cont: câte un rând pentru fiecare mișcare,
+și fiecare mișcare are un rând. Un transfer între două conturi proprii
+înseamnă două rânduri, câte unul pe fiecare cont, iar o tranzacție exclusă din
+cash flow în ThinkOut rămâne un rând. Nimic nu le marchează.
+
+`/transactions/summary` calculează totalurile după aceleași reguli ca ecranul
+de cash flow:
+
+- transferurile între conturile tale sunt excluse
+- mișcările excluse de utilizator sunt lăsate deoparte
+- plățile împărțite sunt numărate o singură dată
+- tranzacțiile în valută sunt convertite la cursul din ziua mișcării
+
+<Note>
+  Dacă însumezi o listă, fiecare transfer este numărat de două ori. Pentru
+  cifre care se potrivesc cu ce arată ThinkOut, folosește endpoint-ul de
+  sinteză.
+</Note>
+
+O sinteză întoarce câte un rând pentru fiecare perioadă și un bloc `totals`
+pentru întregul interval, ca să nu aduni niciodată rânduri tu însuți:
+
+```json
+{
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "group": null,
+  "currency": "RON",
+  "inflow": "84200.00",
+  "outflow": "-61350.25",
+  "net": "22849.75",
+  "count": 212,
+  "starting_balance": "128400.10",
+  "transfers": "0.00",
+  "excluded": "-1500.00",
+  "final_balance": "149749.85"
+}
+```
+
+Transferurile și mișcările excluse sunt raportate pe liniile lor separate.
+Cele patru câmpuri de sold sunt `null` ori de câte ori este trimis `group_by`
+sau `direction`. Pe `/balances` fiecare cont se convertește întreg, la un
+singur curs; obiectul `conversion` din fiecare raport spune care bază s-a
+aplicat.
+
+`/forecasts/summary` însumează previziunile la fel, câte un rând pe perioadă
+și un bloc `totals`: `amount` este ce a fost planificat, iar
+`remaining_amount` ce mai este de așteptat. Se numără orice stare, așa că o
+previziune realizată se adaugă la `amount` și nu adaugă nimic la
+`remaining_amount`.
+
+### Sinteza de cash flow
+
+`/cash-flow/summary` întoarce ce arată ecranul de cash flow, în două părți.
+Partea realizată o formează tranzacțiile din perioadă, numărate cum le numără
+`/transactions/summary`. Partea previzionată este `remaining_amount` al
+previziunilor încă deschise în perioadă. `inflow`, `outflow` și `net` adună
+cele două părți și coincid cu celulele ecranului:
+
+```json
+{
+  "period_start": "2026-11-01",
+  "period_end": "2026-11-30",
+  "group": null,
+  "currency": "RON",
+  "actual_inflow": "12400.00",
+  "actual_outflow": "-8150.00",
+  "actual_count": 31,
+  "forecast_inflow": "68000.00",
+  "forecast_outflow": "-54200.00",
+  "forecast_count": 17,
+  "inflow": "80400.00",
+  "outflow": "-62350.00",
+  "net": "18050.00",
+  "starting_balance": "172379.35",
+  "opened_accounts": "0.00",
+  "transfers": "0.00",
+  "excluded": "0.00",
+  "final_balance": "190429.35"
+}
+```
+
+Pentru o perioadă viitoare, `final_balance` este soldul proiectat, soldul dus
+mai departe prin previziunile de până la sfârșitul perioadei.
+
+Previziunile restante, datate înainte de azi și încă deschise, nu sunt
+numărate în rânduri, ca pe ecran. Trimite `include_overdue=true` ca să le
+numeri în perioadele în care sunt datate. `totals.overdue_inflow` și
+`totals.overdue_outflow` raportează mereu sumele restante pe care rândurile nu
+le-au numărat.
+
+<Note>
+  Un filtru `account_id` sau `bank_id` restrânge partea realizată și
+  soldurile. Previziunile nu au cont, așa că partea previzionată acoperă mereu
+  întregul spațiu de lucru; `forecast_scope` din răspuns spune asta.
+</Note>

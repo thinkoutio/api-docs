@@ -1,0 +1,161 @@
+---
+title: "Connect"
+sidebarTitle: "Connect"
+description: "Connect your ThinkOut account to Claude, ChatGPT, Claude Code, Codex, or Gemini."
+---
+
+You sign in with your ThinkOut account, the same one you use in the app, and
+the assistant only sees the workspaces you gave it access to. Clients that
+cannot sign in can send an [MCP key](#mcp-key) instead.
+
+## Claude
+
+<Steps>
+  <Step title="Open connector settings">
+    In Claude, go to **Customize** → **Connectors**, press **+** and choose
+    **Add custom connector**.
+  </Step>
+  <Step title="Add the server">
+    Name it `ThinkOut`, enter the address `https://mcp.thinkout.io` and press
+    **Add**. Leave the advanced settings empty.
+  </Step>
+  <Step title="Sign in">
+    Press **Connect** next to ThinkOut and authorise with your ThinkOut account.
+  </Step>
+  <Step title="Enable it in a chat">
+    In a conversation, open the **+** menu, choose **Connectors** and make sure
+    **ThinkOut** is turned on.
+  </Step>
+</Steps>
+
+<Note>
+  On Team and Enterprise plans, an owner adds the connector under
+  **Organization settings** → **Connectors** → **Add** → **Custom** → **Web**.
+  Members then find it under **Customize** → **Connectors** and press
+  **Connect**.
+</Note>
+
+<video
+  src="/videos/mcp/connect-claude.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Adding the ThinkOut custom connector in Claude settings, ending on the connected state"
+/>
+
+## Claude Code
+
+Open the terminal and insert:
+
+```bash
+claude mcp add --transport http thinkout https://mcp.thinkout.io
+```
+
+Then run `/mcp` and complete the sign-in in your browser.
+
+## Codex
+
+Open the terminal and insert:
+
+```bash
+codex mcp add thinkout --url https://mcp.thinkout.io
+codex mcp login thinkout
+```
+
+## Gemini CLI
+
+Add the server to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "thinkout": {
+      "httpUrl": "https://mcp.thinkout.io"
+    }
+  }
+}
+```
+
+Then run `/mcp auth thinkout`.
+
+<Note>
+  On Gemini Enterprise, the administrator has to request client credentials from
+  the ThinkOut team first.
+</Note>
+
+## ChatGPT
+
+<Steps>
+  <Step title="Turn on developer mode">
+    In ChatGPT on the web, go to **Settings** → **Security and login** and turn on
+    **Developer mode**.
+  </Step>
+  <Step title="Add the plugin">
+    Open **Plugins**, press **+**, name it `ThinkOut`, give it a short description,
+    enter the address `https://mcp.thinkout.io` and choose **OAuth** as the
+    authentication.
+  </Step>
+  <Step title="Sign in">
+    Create it, review the tools ChatGPT found, and authorise with your ThinkOut
+    account.
+  </Step>
+  <Step title="Enable it in a chat">
+    In a conversation, open the **+** menu, choose **Developer mode** and tick
+    **ThinkOut**. A saved plugin is off until you enable it in the chat.
+  </Step>
+</Steps>
+
+<Note>
+  Developer mode needs a paid plan and is web only. On Business and Enterprise
+  workspaces, an administrator has to allow custom MCP connectors first, under
+  **Workspace Settings** → **Permissions & Roles** → **Connected Data**.
+</Note>
+
+<video
+  src="/videos/mcp/connect-chatgpt.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  aria-label="Adding the ThinkOut plugin in ChatGPT developer mode, ending on the connected state"
+/>
+
+## Other clients
+
+Any MCP-compatible client that supports Streamable HTTP can connect at the
+address `https://mcp.thinkout.io`, either by signing in or by sending an MCP
+key as a bearer token.
+
+## MCP key
+
+Some clients cannot run the interactive sign-in. Those can authenticate
+directly instead: create an MCP key in ThinkOut under **My account**, and send
+it in the `Authorization` header.
+
+```bash
+claude mcp add --transport http thinkout https://mcp.thinkout.io \
+  --header "Authorization: Bearer $THINKOUT_MCP_KEY"
+```
+
+In a client that takes its own configuration file:
+
+```json
+{
+  "mcpServers": {
+    "thinkout": {
+      "httpUrl": "https://mcp.thinkout.io",
+      "headers": {
+        "Authorization": "Bearer <your key>"
+      }
+    }
+  }
+}
+```
+
+<Note>
+  An MCP key belongs to the account rather than to a person, so it reaches
+  every workspace in the account, not only the ones you can open yourself. It
+  keeps working until you regenerate or revoke it. Sign in instead wherever the
+  client supports it.
+</Note>

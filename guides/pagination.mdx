@@ -1,0 +1,52 @@
+---
+title: "Pagination"
+description: "Every list endpoint uses the same cursor-based contract."
+---
+
+Lists come back a page at a time, and every page tells you how to get the
+next one. Bank syncs insert transactions while you page, so the cursor is
+anchored to the last row you received and a page never overlaps the one
+before it.
+
+```json
+{
+  "object": "list",
+  "data": [ ... ],
+  "has_more": true,
+  "next_cursor": "eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0"
+}
+```
+
+Request the next page by passing `next_cursor` back as `cursor`. When
+`has_more` is `false`, `next_cursor` is `null` and you have everything.
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?limit=100&cursor=eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Parameters
+
+| Parameter | Default | Max | Notes |
+|---|---|---|---|
+| `limit` | `100` | `500` | Page size. |
+| `cursor` | | | Opaque token from the previous page. Do not construct or decode it. |
+
+Keep the filters identical between pages. A cursor is only valid for the
+query that produced it; reused with different filters it returns
+`400 invalid_cursor`.
+
+## Ordering
+
+Each resource has one fixed order. There is no `sort` parameter.
+
+| Resource | Order |
+|---|---|
+| transactions | `date` descending, then `id` |
+| accounts, banks, counterparties, labels | `name` ascending, then `id` |
+| categories | the order the app displays them |
+
+Categories come back as the category screen reads: inflows before outflows,
+each root immediately followed by its children, siblings in `position`
+order. Keep the rows in the order you received them and the tree renders
+correctly without sorting.
