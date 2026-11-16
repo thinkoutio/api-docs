@@ -1,0 +1,305 @@
+/* Lota Grotesque is the ThinkOut brand typeface. The files are the same woff2
+   builds the web app serves from client/public/fonts. */
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-RegularIt.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lota Grotesque';
+  src: url('/fonts/LotaGrotesque-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The app uses semibold rather than bold for emphasis. */
+strong {
+  font-weight: 600;
+}
+
+/* Borders as in the app: flat 1px solid, 8px radius, no shadows.
+   border.default = zinc 800 (light) / zinc 600 (dark) for boxes.
+   border.light   = zinc 200 (light) / zinc 700 (dark) for structural dividers.
+   highlight      = the app's background.highlight, the lift a chip gets on the page.
+   Mintlify toggles the .dark class on <html>. */
+:root {
+  --to-radius: 8px;
+  --to-border: #27272a;
+  --to-border-light: #e4e4e7;
+  --to-surface: #f4f4f5;
+  --to-page: #f4f4f5;
+  --to-highlight: rgba(228, 228, 231, 0.5);
+  --to-chip: #e4e4e7;
+}
+
+.dark {
+  --to-border: #52525b;
+  --to-border-light: #3f3f46;
+  --to-surface: #27272a;
+  --to-page: #27272a;
+  --to-highlight: rgba(63, 63, 70, 0.3);
+  --to-chip: #3f3f46;
+}
+
+/* Inline code is a chip. Mintlify tints it stone at half opacity in the light
+   theme and white at 5% in the dark one; on the zinc page the light tint is the
+   page colour. Solid zinc 200 / zinc 700 lifts it clear in both themes. */
+main :not(pre) > code {
+  background-color: var(--to-chip) !important;
+}
+
+/* Code blocks sit flat on the page: no white or black panel inside the border.
+   Shiki sets --shiki-dark-bg inline; the copy-button backdrop reads it. */
+html.dark .code-block-background,
+html.dark .code-block,
+html.dark .code-group {
+  --shiki-dark-bg: #27272a !important;
+  --codeblock-dark: #27272a !important;
+}
+
+/* The strip that fades the code out behind the copy button has to end on the
+   block's own colour. Mintlify's defaults are white and near-black, both of
+   which read as a patch on the zinc page. */
+.code-block-fade-overlay,
+[data-fade-overlay] {
+  --fade-color-light: var(--to-page) !important;
+  --fade-color-dark: var(--to-page) !important;
+}
+.code-group,
+.code-block,
+html .code-block-background,
+html.dark .code-block-background,
+html.dark [class*="bg-codeblock"],
+.code-group pre,
+.code-block pre,
+pre.shiki,
+.codeblock-light,
+.codeblock-dark,
+[class*="codeblock"],
+[class*="bg-codeblock"] {
+  background-color: var(--to-page) !important;
+}
+
+/* Fenced code inside an endpoint description is not a Mintlify code block: the
+   OpenAPI pipeline renders a bare Shiki pre, with no box, no title and no copy
+   button, and a long request line is clipped at the column edge. Give it the
+   same box the page uses elsewhere and let the query strings wrap. */
+header pre.shiki {
+  display: block;
+  border: 1px solid var(--to-border);
+  border-radius: var(--to-radius);
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Shiki sizes the code to max-content, which keeps the pre scrolling sideways
+   however the text is allowed to wrap. This is what Mintlify's own wrap option
+   does to the code blocks it controls. */
+header pre.shiki > code {
+  width: 100% !important;
+}
+
+/* The playground modal repeats the endpoint description above the request form.
+   For a report endpoint that is a screen of prose, which pushes the form and, on
+   anything narrower than the two-column layout, the response out of view. The
+   page already carries the description; the modal keeps only the title. */
+[data-testid="api-playground-modal"] .space-y-1 > .text-base + div {
+  display: none !important;
+}
+
+/* Boxes: cards, code blocks, callouts, playground panels, tabs, accordions, inputs. */
+.border-standard,
+.code-group,
+.code-block,
+.callout,
+.accordion,
+.card,
+[class*="rounded-2xl"][class*="border"],
+[class*="rounded-xl"][class*="border"] {
+  border: 1px solid var(--to-border) !important;
+  border-radius: var(--to-radius) !important;
+  box-shadow: none !important;
+}
+
+.border-standard,
+.card {
+  background-color: var(--to-surface) !important;
+}
+
+/* An accordion group is one box, not a stack of boxes: the group keeps the
+   border and the rounded corners, and Mintlify's own divider separates the rows
+   inside it. Without this the rule above gives every row its own border and the
+   adjacent edges read as a doubled line. */
+.accordion-group {
+  overflow: hidden !important;
+}
+
+.accordion-group > .accordion {
+  border-width: 0 !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  background-color: transparent !important;
+}
+
+/* The playground's collapsible sections are one box drawn as two halves: a
+   header with its bottom edge dropped and only its top corners rounded, and a
+   body with its top edge dropped and only its bottom corners rounded. The box
+   rule above puts the missing edge back and rounds all four corners on each
+   half, so the join reads as a doubled line between two boxes. Give each half
+   back the edge and the corners it was drawn with. A collapsed section carries
+   neither class and stays a whole box. */
+.border-standard[class*="rounded-t-"] {
+  border-bottom-width: 0 !important;
+  border-radius: var(--to-radius) var(--to-radius) 0 0 !important;
+}
+
+.border-standard[class*="rounded-b-"] {
+  border-top-width: 0 !important;
+  border-radius: 0 0 var(--to-radius) var(--to-radius) !important;
+}
+
+/* Tints drawn for a white page that vanish on zinc 100: the type and location
+   pills on the reference pages (stone 100 at half opacity) and the tray behind
+   the previous and next links (gray 50 at 80%). Both come within a few values
+   of the page, while their dark counterparts lift clear of it. The app's
+   highlight gives them the same lift in both themes. */
+.bg-stone-100\/50,
+.bg-gray-50\/80 {
+  background-color: var(--to-highlight) !important;
+}
+
+/* Dropdown panels, such as the response example picker, come in gray 50 and
+   #0F1117. Like the app's menus they are the page colour, outlined by the box
+   border their rounded-2xl already earns them. */
+[role="menu"] {
+  background-color: var(--to-surface) !important;
+}
+
+/* The anchor button beside a field name sits on white, which is a tile on the
+   zinc page. Its own ring outlines it; the fill is just the page. */
+.group\/link > div {
+  background-color: var(--to-page) !important;
+}
+
+.border-standard:hover,
+.card:hover {
+  border-color: var(--to-border) !important;
+}
+
+.rounded-2xl,
+.rounded-xl,
+.rounded-lg,
+.rounded-\[10px\] {
+  border-radius: var(--to-radius) !important;
+}
+
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl {
+  box-shadow: none !important;
+}
+
+/* Search field and buttons follow the app's outlined controls. */
+#search-bar-entry,
+.theme-preference-menu-trigger {
+  border: 1px solid var(--to-border) !important;
+  border-radius: var(--to-radius) !important;
+  box-shadow: none !important;
+}
+
+/* Structural dividers stay light, like the app's divider between rows. */
+#sidebar,
+#navbar > div,
+.toc-item,
+th,
+td {
+  border-color: var(--to-border-light) !important;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--to-border-light);
+}
+
+/* Screen recordings and screenshots sit unframed on the page; round their
+   corners like the boxes and keep clear space between them and the surrounding
+   blocks. The hosted site serves images from its CDN with a query string, so
+   match on the folder rather than the extension. */
+.prose img[src*="/images/mcp/"],
+.prose video {
+  display: block;
+  width: 100%;
+  cursor: zoom-in;
+  border-radius: 10px !important;
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+}
+
+/* Mintlify's lightbox mounts a copy of the image outside the prose; keep it
+   at its natural size so it centres and fits the viewport. */
+[data-ramka-media] img {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 !important;
+  border-radius: 10px;
+}
+
+/* Overlay opened by video-zoom.js when a recording is clicked. */
+.video-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+
+.video-zoom-overlay video {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 !important;
+  cursor: zoom-out;
+}
+
+/* Blockquotes get the primary colour as a left bar, which is invisible on the
+   dark page; use the box border colour instead. */
+blockquote,
+.prose blockquote {
+  border-left: 2px solid var(--to-border) !important;
+}
