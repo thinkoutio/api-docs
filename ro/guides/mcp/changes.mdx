@@ -1,0 +1,136 @@
+---
+title: "Modificări"
+sidebarTitle: "Modificări"
+description: "Ce poate modifica asistentul în ThinkOut, și cum îți arată modificarea înainte s-o facă."
+---
+
+Asistentul îți poate face ordine în date: categorisește tranzacții și
+previziuni, asociază plăți cu previziuni, scrie reguli de categorisire și setează bugete. Modifică
+doar ce există deja în ThinkOut.
+
+## Ce poate modifica asistentul
+
+| Îi poți cere să | Ce se schimbă |
+| --- | --- |
+| Categorisească tranzacții sau previziuni | Categoria tranzacțiilor sau previziunilor existente, inclusiv una setată de tine manual |
+| Seteze sau să șteargă partenerul | Partenerul tranzacțiilor sau previziunilor existente |
+| Adauge sau să scoată etichete | Etichetele de pe tranzacțiile sau previziunile existente. Etichetele rămân în spațiul de lucru |
+| Împerecheze un transfer între conturile tale | Două tranzacții devin un singur transfer, deci ies din totalurile de cash flow |
+| Marcheze o tranzacție ca transfer sau să desfacă un transfer | Marcajul de transfer, cu sau fără tranzacție pereche |
+| Accepte transferurile sugerate de ThinkOut | Aceeași împerechere, din sugestiile pe care ThinkOut le-a făcut deja |
+| Excludă o tranzacție din cash flow sau s-o includă din nou | Dacă tranzacția intră în cash flow |
+| Asocieze o plată cu o previziune, integral sau parțial | O asociere integrală închide previziunea. O asociere parțială scade suma încă așteptată |
+| Scoată o asociere, să închidă o previziune care nu se mai întâmplă sau s-o redeschidă | Starea previziunii și suma pe care o mai așteaptă |
+| Accepte asocierile sugerate de ThinkOut | Aceeași asociere integrală, din sugestiile pe care ThinkOut le-a făcut deja |
+| Creeze, să modifice sau să șteargă o regulă de categorisire | Regula. ThinkOut o aplică apoi fiecărei tranzacții noi |
+| Aplice o regulă pe tranzacții trecute | Ce setează regula, pe tranzacțiile trecute care îndeplinesc condiția. Ca atunci când aplici regula în ThinkOut, fiecare tranzacție modificată o arată printre regulile aplicate |
+| Seteze sau să șteargă un buget | Bugetul unei categorii pentru o lună, sau pentru fiecare lună până la o lună de final |
+
+Când asistentul schimbă o categorie, schimbă doar categoria. Nu creează și nu
+întărește o regulă automată. Regulile apar doar atunci când îi ceri
+asistentului să scrie una.
+
+Când asistentul modifică o previziune, schimbă doar acea previziune, ca atunci
+când modifici mai multe previziuni deodată în ThinkOut. Recurența ei rămâne
+cum era, așa că previziunile pe care recurența le generează mai târziu păstrează
+categoria, partenerul și etichetele recurenței. Și o previziune închisă poate
+fi modificată.
+
+## Ce rămâne în ThinkOut
+
+Asistentul nu creează și nu șterge niciodată tranzacții, conturi bancare,
+categorii, parteneri sau etichete. Nu modifică niciodată suma, data,
+descrierea sau contul unei tranzacții. Previziunile, recurențele și
+scenariile se gestionează în ThinkOut: asistentul asociază plăți cu
+previziunile existente și le schimbă categoria, partenerul și etichetele, dar
+nu le creează, nu le șterge și nu le modifică suma, data, descrierea sau
+recurența. Nu alege nici ce categorii
+apar pe pagina de bugete și nu gestionează utilizatori, roluri sau chei.
+
+Când nicio categorie, niciun partener sau nicio etichetă nu se potrivește,
+asistentul îți spune să adaugi una în ThinkOut și nu inventează una. O
+tranzacție împărțită în mai multe părți se modifică în ThinkOut. O tranzacție
+încă în așteptare la bancă nu poate fi împerecheată și nici asociată cu o
+previziune până nu se înregistrează.
+
+## Îți arată modificarea mai întâi
+
+Fereastra de aprobare a asistentului arată id-uri, nu nume. De aceea, când o
+modificare atinge mai multe elemente sau înlocuiește ori scoate ceva,
+asistentul nu schimbă nimic la început. Îți arată în cuvinte ce s-ar schimba
+și face modificarea doar după ce ești de acord.
+
+- **Un singur element, fără pierderi.** Modificarea se face imediat ce aprobi
+  fereastra asistentului. De exemplu, categorisirea unei tranzacții
+  necategorisite, setarea unui partener acolo unde nu era niciunul, adăugarea
+  de etichete pe o tranzacție sau închiderea unei previziuni.
+- **Mai multe elemente.** Vezi lista mai întâi, de exemplu ce tranzacții trec
+  din ce categorie în ce categorie.
+- **Ceva înlocuit sau scos.** Vezi modificarea mai întâi, chiar și pentru un
+  singur element. Asta include înlocuirea unei categorii, alta decât
+  necategorisit, înlocuirea sau ștergerea partenerului, scoaterea etichetelor,
+  desfacerea unui transfer, scoaterea unei asocieri cu o previziune și
+  împerecherea sau asocierea care șterge sugestii în așteptare.
+- **Bugete.** Vezi modificarea mai întâi când suprascrie sau șterge un buget
+  setat de tine, sau acoperă mai mult de o lună. Fiecare modificare întoarce
+  valoarea anterioară, pentru că ThinkOut nu păstrează altă copie a ei.
+- **Reguli.** Crearea, modificarea sau ștergerea unei reguli ți se arată
+  întotdeauna mai întâi, în cuvinte. Pentru o regulă nouă sau modificată vezi
+  și tranzacțiile din ultimele 90 de zile pe care condiția le-ar prinde. O
+  condiție prea largă se vede aici, înainte să ruleze la fiecare
+  sincronizare.
+- **Aplicarea unei reguli pe tranzacții trecute.** Vezi întotdeauna câte
+  tranzacții se schimbă și ce valori ar fi suprascrise. Implicit, regula doar
+  completează ce lipsește. Înlocuiește o categorie sau un partener setat de
+  tine manual doar dacă îi ceri asta.
+
+Când nu s-ar schimba nimic, de exemplu pentru că tranzacțiile au deja acea
+categorie, asistentul îți spune imediat de ce.
+
+O cerere modifică cel mult 100 de elemente. Pentru o lucrare mai mare,
+asistentul lucrează în tranșe de câte 100 și continuă când îi ceri. O regulă
+aplicată pe tranzacții trecute se uită înapoi cel mult douăsprezece luni, iar
+bugetele se pot seta în limita a zece ani față de luna curentă.
+
+## Cum revii asupra unei modificări
+
+Nu există un buton de anulare. Ca să inversezi o modificare, cere-i
+asistentului să readucă elementele cum erau. Fiecare modificare pe care o face
+arată ce avea fiecare element înainte, așa că poate pune la loc categoria,
+partenerul, etichetele sau bugetul de dinainte. Împerecherea unui transfer sau
+asocierea cu o previziune șterge sugestiile în așteptare care implică acele
+tranzacții, iar readucerea elementelor nu aduce înapoi acele sugestii.
+
+## Cine poate modifica date
+
+**Conexiunile făcute prin autentificare.** O conexiune pe care o faci de acum
+înainte poate citi și modifica. Ecranul de consimțământ ThinkOut arată ce
+poate citi asistentul și ce poate modifica. Nu există o variantă doar pentru
+citire.
+
+O conexiune făcută înainte ca modificările să fie disponibile rămâne doar
+pentru citire. Ca să poată modifica date, conectează din nou ThinkOut:
+
+1. În setările de conectori ale asistentului, deconectează ThinkOut. În Claude,
+   asta înseamnă **Customize** → **Connectors** → **ThinkOut**.
+2. Conectează din nou ThinkOut și autentifică-te.
+3. Aprobă ecranul ThinkOut, care arată ce poate citi asistentul și ce poate
+   modifica.
+
+La **Contul meu** → **Aplicații conectate** conexiunea apare apoi ca **Citire
+și modificare**. Dacă îi ceri o modificare unei conexiuni doar pentru citire și
+asistentul îți cere să te autentifici din nou în ThinkOut, aprobarea are același
+efect.
+
+**Rolul tău.** Modificările cer rolul de Editor în spațiul de lucru. Dacă
+acolo ești Viewer, asistentul poate citi în continuare spațiul de lucru și îți
+spune că nu poate modifica nimic în el. Un manager al companiei îți poate da
+rolul de Editor.
+
+**Cheile MCP.** O [cheie MCP](/ro/guides/mcp/connect#cheie-mcp) are un nivel
+de acces, **Doar citire** sau **Citire și modificare**, ales la crearea ei.
+Cheile create înainte ca modificările să fie disponibile sunt doar pentru
+citire. Nivelul de acces nu mai poate fi schimbat. Ca o cheie să poată
+modifica date, un Manager o revocă și creează o cheie nouă cu acces **Citire
+și modificare**. O cheie nu are o persoană în spate, așa că rolul de Editor nu
+se aplică.

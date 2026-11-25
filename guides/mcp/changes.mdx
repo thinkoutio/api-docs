@@ -1,0 +1,129 @@
+---
+title: "Changes"
+sidebarTitle: "Changes"
+description: "What the assistant can change in ThinkOut, and how it asks before it changes several items or replaces something."
+---
+
+The assistant can tidy up your data for you: categorise transactions and
+forecasts, match payments to forecasts, write categorisation rules and set budgets. It only
+changes what already exists in ThinkOut.
+
+## What the assistant can change
+
+| Ask it to | What changes |
+| --- | --- |
+| Categorise transactions or forecasts | The category of existing transactions or forecasts, including one you set by hand |
+| Set or clear the counterparty | The counterparty of existing transactions or forecasts |
+| Add or remove labels | Labels on existing transactions or forecasts. The labels themselves stay in the workspace |
+| Pair a transfer between your own accounts | Two transactions become one transfer, so they leave the cash flow totals |
+| Mark a transaction as a transfer, or unpair a transfer | The transfer mark, with or without a partner transaction |
+| Accept the transfers ThinkOut suggested | The same pairing, from the suggestions ThinkOut already made |
+| Exclude a transaction from cash flow, or include it again | Whether the transaction counts in cash flow |
+| Match a payment to a forecast, in full or in part | A full match closes the forecast. A partial match lowers what is still expected |
+| Remove a match, close a forecast that will not happen, or reopen one | The forecast's state and what it still expects |
+| Accept the forecast matches ThinkOut suggested | The same full match, from the suggestions ThinkOut already made |
+| Create, edit or delete a categorisation rule | The rule. ThinkOut then applies it to every new transaction |
+| Apply a rule to past transactions | What the rule sets, on past transactions its condition matches. As when you apply the rule in ThinkOut, each changed transaction lists it among its applied rules |
+| Set or clear a budget | The budget of a category for a month, or for every month up to an end month |
+
+Changing a category from the assistant changes the category and nothing else.
+It does not create or reinforce an automatic rule. Rules come only from the
+ones you ask the assistant to write.
+
+Changing a forecast changes only that forecast, as when you edit several
+forecasts at once in ThinkOut. Its recurrence stays as it is, so the forecasts
+the recurrence generates later keep the recurrence's category, counterparty
+and labels. A closed forecast can be changed too.
+
+## What stays in ThinkOut
+
+The assistant never creates or deletes transactions, bank accounts,
+categories, counterparties or labels. It never edits a transaction's amount,
+date, description or account. Forecasts, recurrences and scenarios are
+managed in ThinkOut: the assistant matches payments to forecasts that exist
+and changes their category, counterparty and labels, but does not create or
+delete them or change their amount, date, description or recurrence. It also does not choose which categories show on
+your budgets, and it does not manage users, roles or keys.
+
+When no category, counterparty or label fits, the assistant tells you to add
+one in ThinkOut and does not invent one. A transaction split into parts is
+changed in ThinkOut. A transaction still pending at the bank cannot be paired
+or matched to a forecast until it books.
+
+## It shows you the change first
+
+The approval prompt in your assistant shows ids, not names. So when a change
+touches more than one item, or replaces or removes something, the assistant
+changes nothing at first. It shows you what would change, in words, and makes
+the change only after you agree.
+
+- **One item, nothing lost.** The change happens as soon as you approve the
+  assistant's own prompt. For example, categorising one uncategorised
+  transaction, setting a counterparty where there was none, adding labels to
+  one transaction, or closing one forecast.
+- **Several items.** You see the list first, for example which transactions
+  move from which category to which.
+- **Something replaced or removed.** You see the change first, even for one
+  item. That covers replacing a category other than uncategorised, replacing
+  or clearing a counterparty, removing labels, unpairing a transfer, removing
+  a match to a forecast, and pairing or matching that deletes pending
+  suggestions.
+- **Budgets.** You see the change first when it overwrites or clears a budget
+  you set, or covers more than one month. Each change returns the previous
+  value, because ThinkOut keeps no other copy.
+- **Rules.** Creating, editing or deleting a rule always shows it first, in
+  words. For a new or edited rule you also see the transactions of the last 90
+  days that the condition would catch. A condition that is too broad shows up
+  here, before it runs on every sync.
+- **Applying a rule to past transactions.** You always see how many
+  transactions change and which values would be overwritten. By default the
+  rule only fills in what is missing. It replaces a category or counterparty
+  you set by hand only when you ask for that.
+
+When nothing would change, for example because the transactions already have
+that category, the assistant tells you why at once.
+
+One request changes at most 100 items. For a larger job, the assistant works
+in batches of 100 and continues when you ask. A rule applied to past
+transactions looks back at most twelve months, and budgets can be set within
+ten years of the current month.
+
+## Changing something back
+
+There is no undo button. To reverse a change, ask the assistant to set the
+items back. Every change it makes reports what each item held before, so it
+can put the previous category, counterparty, labels or budget back. Pairing a
+transfer or matching a forecast deletes the pending suggestions that involve
+those transactions, and changing the items back does not bring those
+suggestions back.
+
+## Who can change data
+
+**Connections made by signing in.** A connection you make from now on can
+read and change. The ThinkOut consent screen lists what the assistant can
+read and what it can change. There is no read-only option.
+
+A connection made before changes were available stays read only. To let it
+change data, connect ThinkOut again:
+
+1. In your assistant's connector settings, disconnect ThinkOut. In Claude,
+   that is **Customize** → **Connectors** → **ThinkOut**.
+2. Connect ThinkOut again and sign in.
+3. Approve the ThinkOut screen, which lists what the assistant can read and
+   what it can change.
+
+**My account** → **Connected apps** then shows the connection as **Read and
+change**. If you ask a read-only connection for a change and your assistant
+asks you to sign in to ThinkOut again, approving that does the same.
+
+**Your role.** Changes need the Editor role in the workspace. If you are a
+Viewer there, the assistant can still read the workspace, and it tells you
+that it cannot change anything in it. A manager of the company can give you
+the Editor role.
+
+**MCP keys.** An [MCP key](/guides/mcp/connect#mcp-key) has an access level,
+**Read only** or **Read and change**, chosen when it is created. Keys created
+before changes were available are read only. The access level cannot be
+changed later. To let a key change data, a Manager revokes it and creates a new
+key with **Read and change** access. A key has no person behind it, so the
+Editor role does not apply.

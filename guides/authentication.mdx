@@ -1,0 +1,65 @@
+---
+title: "Authentication"
+description: "API keys are bound to one workspace and sent as a bearer token."
+---
+
+Every request carries an API key in the `Authorization` header:
+
+```bash
+curl https://api.thinkout.io/v1/accounts \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Keys and workspaces
+
+A key belongs to exactly one workspace. There is no workspace parameter in
+the URL: the key decides which workspace you reach. To reach several
+workspaces, create one key per workspace.
+
+Owners and managers create the key in ThinkOut under **Settings** →
+**Workspace**, where they can read it again at any time. Store it in a secrets
+manager, never in client-side code or a public repository.
+
+## Access levels
+
+A key reads everything in its workspace. Whether it can also write is chosen
+when the key is created:
+
+| Access | What the key can do |
+|---|---|
+| **Read only** | Every `GET` endpoint. |
+| **Read and change** | Also the [write endpoints](/guides/writes): categories, counterparties and labels on existing transactions and forecasts, transfers, exclusions, matches to forecasts, categorisation rules and budget values. |
+
+Keys created before writes were available are read only. The access level
+cannot be changed later. To let an integration write, revoke the workspace's
+key and create a new one with **Read and change** access, then update the
+integration with the new key. Regenerating a key keeps its access level.
+
+A write with a read-only key returns `403` with the code `key_read_only`.
+
+<Warning>
+  Anyone holding a **Read and change** key can change the workspace's data
+  until the key is revoked. Create one only for an integration that writes,
+  and keep read-only keys for everything else.
+</Warning>
+
+## Regeneration and revocation
+
+A workspace holds one key at a time. Regenerating it from the same card issues
+a new key and the old one stops working at once, so update your integration
+in the same step. Revoking leaves the workspace with no key.
+
+<Note>
+  Either action is immediate: the next request with the old key returns
+  `401`. Owners and managers on the account receive an email each time.
+</Note>
+
+## Failure responses
+
+| Status | `error.code` | Meaning |
+|---|---|---|
+| `401` | `unauthorized` | The header is missing, malformed, or the key is unknown or revoked. |
+| `403` | `forbidden` | The key is valid but the company's ThinkOut plan does not include the API. |
+| `403` | `key_read_only` | The key can only read and the request is a write. |
+
+See [Errors](/guides/errors) for the envelope.

@@ -1,0 +1,68 @@
+---
+title: "Autentificare"
+description: "Cheile API sunt legate de un singur spațiu de lucru și se trimit ca bearer token."
+---
+
+Fiecare cerere poartă o cheie API în antetul `Authorization`:
+
+```bash
+curl https://api.thinkout.io/v1/accounts \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Chei și spații de lucru
+
+O cheie aparține exact unui spațiu de lucru. Nu există un parametru pentru
+spațiul de lucru în URL: cheia decide la ce spațiu ajungi. Pentru mai multe
+spații de lucru, creează o cheie pentru fiecare.
+
+Proprietarii și managerii creează cheia în ThinkOut, la **Setări** →
+**Spațiu de lucru**, de unde o pot citi din nou oricând. Păstrează-o într-un
+manager de secrete, niciodată în cod client sau într-un repository public.
+
+## Niveluri de acces
+
+O cheie citește tot ce există în spațiul ei de lucru. Dacă poate și să scrie
+se alege la crearea cheii:
+
+| Acces | Ce poate face cheia |
+|---|---|
+| **Doar citire** | Toate endpointurile `GET`. |
+| **Citire și modificare** | Și [endpointurile de scriere](/ro/guides/writes): categoriile, partenerii și etichetele tranzacțiilor și previziunilor existente, transferurile, excluderile, asocierile cu previziuni, regulile de categorisire și valorile din bugete. |
+
+Cheile create înainte ca scrierile să fie disponibile sunt doar pentru citire.
+Nivelul de acces nu mai poate fi schimbat ulterior. Ca o integrare să poată
+scrie, revocă cheia spațiului de lucru și creează una nouă cu acces **Citire
+și modificare**, apoi actualizează integrarea cu cheia nouă. Regenerarea unei
+chei îi păstrează nivelul de acces.
+
+O scriere făcută cu o cheie doar pentru citire întoarce `403` cu codul
+`key_read_only`.
+
+<Warning>
+  Oricine deține o cheie **Citire și modificare** poate modifica datele
+  spațiului de lucru până când cheia este revocată. Creează una doar pentru o
+  integrare care scrie și folosește chei doar pentru citire în rest.
+</Warning>
+
+## Regenerare și revocare
+
+Un spațiu de lucru are o singură cheie la un moment dat. Regenerarea, din
+același card, emite o cheie nouă, iar cea veche nu mai funcționează imediat,
+așa că actualizează-ți integrarea în același pas. Revocarea lasă spațiul de
+lucru fără cheie.
+
+<Note>
+  Ambele acțiuni sunt imediate: următoarea cerere cu cheia veche primește
+  `401`. Proprietarii și managerii contului primesc un e-mail la fiecare.
+</Note>
+
+## Răspunsuri de eroare
+
+| Status | `error.code` | Semnificație |
+|---|---|---|
+| `401` | `unauthorized` | Antetul lipsește, este malformat sau cheia este necunoscută ori revocată. |
+| `403` | `forbidden` | Cheia este validă, dar planul ThinkOut al companiei nu include API-ul. |
+| `403` | `key_read_only` | Cheia poate doar să citească, iar cererea este o scriere. |
+
+Vezi [Erori](/ro/guides/errors) pentru structura răspunsului.

@@ -1,0 +1,53 @@
+---
+title: "Paginare"
+description: "Toate endpoint-urile de listare folosesc același contract bazat pe cursor."
+---
+
+Listele vin pagină cu pagină, și fiecare pagină îți spune cum o obții pe
+următoarea. Sincronizările bancare inserează tranzacții în timp ce parcurgi
+paginile, așa că cursorul este ancorat la ultimul rând primit și o pagină nu
+se suprapune niciodată cu cea dinaintea ei.
+
+```json
+{
+  "object": "list",
+  "data": [ ... ],
+  "has_more": true,
+  "next_cursor": "eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0"
+}
+```
+
+Cere pagina următoare trimițând `next_cursor` înapoi ca `cursor`. Când
+`has_more` este `false`, `next_cursor` este `null` și ai primit tot.
+
+```bash
+curl "https://api.thinkout.io/v1/transactions?limit=100&cursor=eyJkIjoiMjAyNi0wOC0yOSIsImkiOiJhOWIyIn0" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY"
+```
+
+## Parametri
+
+| Parametru | Implicit | Maxim | Observații |
+|---|---|---|---|
+| `limit` | `100` | `500` | Dimensiunea paginii. |
+| `cursor` | | | Token opac din pagina anterioară. Nu îl construi și nu îl decoda. |
+
+Păstrează aceleași filtre între pagini. Un cursor este valid doar pentru
+interogarea care l-a produs; refolosit cu alte filtre, întoarce
+`400 invalid_cursor`.
+
+## Ordonare
+
+Fiecare resursă are o singură ordine fixă. Nu există parametru `sort`.
+
+| Resursă | Ordine |
+|---|---|
+| tranzacții | `date` descrescător, apoi `id` |
+| conturi, bănci, parteneri, etichete | `name` crescător, apoi `id` |
+| categorii | ordinea în care le afișează aplicația |
+
+Categoriile vin așa cum se citește ecranul de categorii: încasările înaintea
+plăților, fiecare categorie de nivel superior urmată imediat de copiii ei,
+iar categoriile de pe același nivel în ordinea `position`. Păstrează rândurile
+în ordinea în care le-ai primit și arborele se afișează corect fără nicio
+sortare.

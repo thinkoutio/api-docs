@@ -1,0 +1,131 @@
+---
+title: "Writes"
+description: "Change existing data with a read and change key, and preview with dry_run."
+---
+
+The API can change a limited set of things in a workspace: categories,
+counterparties and labels on existing transactions and forecasts, transfers,
+exclusions, matches between transactions and forecasts, categorisation rules
+and budget values. It never creates or deletes transactions, forecasts, bank
+accounts, categories, counterparties or labels, and it never changes a
+forecast's amount, date, description or recurrence, or a scenario. Those are
+managed in ThinkOut.
+
+Writes need a key created with **Read and change** access. See
+[Access levels](/guides/authentication#access-levels).
+
+## Change data
+
+Every write takes a JSON body with the items to change:
+
+```bash
+curl -X POST https://api.thinkout.io/v1/transactions/category \
+  -H "Authorization: Bearer $THINKOUT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_ids": ["9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f"],
+    "category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"
+  }'
+```
+
+The write applies at once and returns what changed:
+
+```json
+{
+  "applied": true,
+  "changes": [
+    {
+      "transaction_id": "9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f",
+      "from_category_id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+      "to_category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"
+    }
+  ],
+  "skipped": []
+}
+```
+
+`changes` holds one entry per item changed, with the value before and after.
+`skipped` lists the items left as they are, each with an `item_kind`, an `id`,
+a `month` and a `reason`, such as `split` for a transaction split into parts or
+`unchanged` for one that already had the value. `item_kind` says what the `id`
+names: `transaction`, `forecast`, `budget`, `rule`, `transfer_suggestion` or
+`link_suggestion`. For a budget the `id` is the category's and `month` is the
+month, such as `2026-03`. For every other item `month` is `null`. One skipped
+item does not stop the others. The reasons are listed under `SkipReason` in
+the API reference.
+
+Writes change existing items only. A category, counterparty, label or rule that
+does not exist in the workspace returns `404`, and nothing is changed.
+
+## Preview with dry_run
+
+Add `dry_run=true` to any write to get the same response without changing
+anything. `applied` is `false`, and nothing is recorded.
+
+```bash
+curl -X POST "https://api.thinkout.io/v1/transactions/category?dry_run=true" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"transaction_ids": ["9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f"], "category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"}'
+```
+
+Use it before a write you cannot easily check afterwards, such as applying a
+rule to past transactions with `overwrite`, or setting budgets over a value
+someone typed by hand. A budget value set by hand has no other copy, so the
+`before` in the response is your only copy of it.
+
+## Limits
+
+- At most 100 items per call: transactions, pairs, links, forecasts,
+  suggestions or budget months. More returns `422` with `invalid_parameter`.
+  Repeated ids count once.
+- Setting a budget with `repeat_until` counts every month it covers. Budget
+  months must be within ten years of the current month.
+- Applying a rule changes at most 100 transactions per call, newest first, and
+  looks back at most twelve months. `not_applied` says how many are left. Call
+  again until it is `0`.
+- Writes count against the same [rate limit](/guides/errors#rate-limits) as
+  reads.
+
+## What you can change
+
+| Endpoint | Changes |
+|---|---|
+| `POST /transactions/category` | The category of transactions |
+| `POST /transactions/counterparty` | The counterparty of transactions, or clears it |
+| `POST /transactions/labels/add`, `/labels/remove` | Labels on transactions |
+| `POST /transactions/transfers/pair`, `/mark`, `/unpair` | Transfers between the workspace's own accounts |
+| `POST /transactions/transfers/suggestions/accept` | Pairs from ThinkOut's transfer suggestions |
+| `POST /transactions/exclude`, `/include` | Whether transactions count in cash flow |
+| `POST /forecasts/category` | The category of forecasts |
+| `POST /forecasts/counterparty` | The counterparty of forecasts, or clears it |
+| `POST /forecasts/labels/add`, `/labels/remove` | Labels on forecasts |
+| `POST /forecasts/links`, `/links/remove` | Matches between transactions and forecasts, full or partial |
+| `POST /forecasts/realise`, `/reopen` | Whether a forecast is closed |
+| `POST /forecasts/suggestions/accept` | Matches from ThinkOut's match suggestions |
+| `POST /budgets/values`, `/budgets/values/clear` | Budget values set by hand |
+| `POST /transaction-rules`, `PUT` and `DELETE /transaction-rules/{id}` | Categorisation rules |
+| `POST /transaction-rules/{id}/apply` | Past transactions, by a rule's condition |
+
+Changing a category through the API changes the category and nothing else. It
+does not create or reinforce an automatic rule.
+
+Changing a forecast changes only that forecast, never its recurrence, so the
+forecasts the recurrence generates later keep the recurrence's category,
+counterparty and labels. A closed forecast can be changed too.
+
+Pairing a transfer and matching a forecast also delete the pending
+suggestions that involve those transactions or that forecast.
+`pending_suggestions_removed` in each change counts them. Unpairing and
+unmatching do not bring them back.
+
+The API does not list rules or suggestions. The MCP tools
+`list_transaction_rules` and `list_suggestions` do, and every rule write
+returns the rule's full definition.
+
+## Change something back
+
+There is no undo endpoint. Every write returns each item's value before the
+change. To reverse a write, set the previous values again, or call the
+opposite endpoint, such as `/labels/remove` after `/labels/add` or `/unpair`
+after `/pair`. Keep the response of any write you may need to reverse.

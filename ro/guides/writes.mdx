@@ -1,0 +1,136 @@
+---
+title: "Scrieri"
+description: "Modifică date existente cu o cheie de citire și modificare, și simulează cu dry_run."
+---
+
+API-ul poate modifica un set limitat de lucruri într-un spațiu de lucru:
+categoriile, partenerii și etichetele tranzacțiilor și previziunilor
+existente, transferurile, excluderile, asocierile dintre tranzacții și
+previziuni, regulile de categorisire și valorile din bugete. Nu creează și nu
+șterge niciodată tranzacții, previziuni, conturi bancare, categorii, parteneri
+sau etichete, nu modifică niciodată suma, data, descrierea sau recurența unei
+previziuni și nu modifică scenarii. Acestea se gestionează în ThinkOut.
+
+Scrierile au nevoie de o cheie creată cu acces **Citire și modificare**. Vezi
+[Niveluri de acces](/ro/guides/authentication#niveluri-de-acces).
+
+## Modifică date
+
+Fiecare scriere primește un corp JSON cu elementele de modificat:
+
+```bash
+curl -X POST https://api.thinkout.io/v1/transactions/category \
+  -H "Authorization: Bearer $THINKOUT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_ids": ["9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f"],
+    "category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"
+  }'
+```
+
+Scrierea se aplică imediat și întoarce ce s-a schimbat:
+
+```json
+{
+  "applied": true,
+  "changes": [
+    {
+      "transaction_id": "9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f",
+      "from_category_id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+      "to_category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"
+    }
+  ],
+  "skipped": []
+}
+```
+
+`changes` are câte o intrare pentru fiecare element modificat, cu valoarea de
+dinainte și cea de după. `skipped` listează elementele lăsate neschimbate,
+fiecare cu un `item_kind`, un `id`, un `month` și un `reason`, de exemplu
+`split` pentru o tranzacție împărțită în mai multe părți sau `unchanged`
+pentru una care avea deja valoarea. `item_kind` spune ce numește `id`:
+`transaction`, `forecast`, `budget`, `rule`, `transfer_suggestion` sau
+`link_suggestion`. Pentru un buget, `id` este al categoriei, iar `month` este
+luna, de exemplu `2026-03`. Pentru orice alt element `month` este `null`. Un
+element omis nu le oprește pe celelalte. Motivele sunt listate la
+`SkipReason` în referința API.
+
+Scrierile modifică doar elemente existente. O categorie, un partener, o
+etichetă sau o regulă care nu există în spațiul de lucru întoarce `404`, iar
+nimic nu se schimbă.
+
+## Simulează cu dry_run
+
+Adaugă `dry_run=true` la orice scriere ca să primești același răspuns fără să
+se schimbe nimic. `applied` este `false` și nimic nu se înregistrează.
+
+```bash
+curl -X POST "https://api.thinkout.io/v1/transactions/category?dry_run=true" \
+  -H "Authorization: Bearer $THINKOUT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"transaction_ids": ["9b2f6c1e-4d3a-4e8b-9f10-2a3b4c5d6e7f"], "category_id": "2a3b4c5d-6e7f-4809-8a1b-2c3d4e5f6a7b"}'
+```
+
+Folosește-l înaintea unei scrieri pe care nu o poți verifica ușor după aceea,
+de exemplu aplicarea unei reguli pe tranzacții trecute cu `overwrite`, sau
+setarea unor bugete peste o valoare introdusă manual. O valoare de buget
+introdusă manual nu are altă copie, așa că `before` din răspuns este singura
+ta copie a ei.
+
+## Limite
+
+- Cel mult 100 de elemente per apel: tranzacții, perechi, asocieri,
+  previziuni, sugestii sau luni de buget. Peste această limită primești `422`
+  cu `invalid_parameter`. Id-urile repetate contează o singură dată.
+- Setarea unui buget cu `repeat_until` numără fiecare lună pe care o acoperă.
+  Lunile de buget trebuie să fie în limita a zece ani față de luna curentă.
+- Aplicarea unei reguli modifică cel mult 100 de tranzacții per apel, de la
+  cea mai nouă, și se uită înapoi cel mult douăsprezece luni. `not_applied`
+  spune câte au rămas. Apelează din nou până ajunge la `0`.
+- Scrierile intră în aceeași [limită de rată](/ro/guides/errors#limite-de-rată)
+  ca citirile.
+
+## Ce poți modifica
+
+| Endpoint | Ce schimbă |
+|---|---|
+| `POST /transactions/category` | Categoria tranzacțiilor |
+| `POST /transactions/counterparty` | Partenerul tranzacțiilor, sau îl șterge |
+| `POST /transactions/labels/add`, `/labels/remove` | Etichetele tranzacțiilor |
+| `POST /transactions/transfers/pair`, `/mark`, `/unpair` | Transferurile între conturile proprii ale spațiului de lucru |
+| `POST /transactions/transfers/suggestions/accept` | Perechi din sugestiile de transfer ale ThinkOut |
+| `POST /transactions/exclude`, `/include` | Dacă tranzacțiile intră în cash flow |
+| `POST /forecasts/category` | Categoria previziunilor |
+| `POST /forecasts/counterparty` | Partenerul previziunilor, sau îl șterge |
+| `POST /forecasts/labels/add`, `/labels/remove` | Etichetele previziunilor |
+| `POST /forecasts/links`, `/links/remove` | Asocierile dintre tranzacții și previziuni, integrale sau parțiale |
+| `POST /forecasts/realise`, `/reopen` | Dacă o previziune este închisă |
+| `POST /forecasts/suggestions/accept` | Asocieri din sugestiile ThinkOut |
+| `POST /budgets/values`, `/budgets/values/clear` | Valorile de buget introduse manual |
+| `POST /transaction-rules`, `PUT` și `DELETE /transaction-rules/{id}` | Regulile de categorisire |
+| `POST /transaction-rules/{id}/apply` | Tranzacțiile trecute, după condiția unei reguli |
+
+Când schimbi o categorie prin API, se schimbă doar categoria. Nu se creează și
+nu se întărește o regulă automată.
+
+Când modifici o previziune, se schimbă doar acea previziune, niciodată
+recurența ei, așa că previziunile pe care recurența le generează mai târziu
+păstrează categoria, partenerul și etichetele recurenței. Și o previziune
+închisă poate fi modificată.
+
+Împerecherea unui transfer și asocierea cu o previziune șterg și sugestiile în
+așteptare care implică acele tranzacții sau acea previziune.
+`pending_suggestions_removed` din fiecare modificare le numără. Desfacerea și
+dezasocierea nu le readuc.
+
+API-ul nu listează reguli sau sugestii. Instrumentele MCP
+`list_transaction_rules` și `list_suggestions` le listează, iar fiecare
+scriere pe o regulă întoarce definiția ei completă.
+
+## Cum revii asupra unei scrieri
+
+Nu există un endpoint de anulare. Fiecare scriere întoarce valoarea de dinainte
+a fiecărui element. Ca să inversezi o scriere, setează din nou valorile de
+dinainte sau apelează endpointul opus, de exemplu `/labels/remove` după
+`/labels/add` sau `/unpair` după `/pair`. Păstrează răspunsul oricărei scrieri
+pe care s-ar putea să vrei s-o inversezi.
